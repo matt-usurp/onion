@@ -1,6 +1,6 @@
 import type { Grok } from '@matt-usurp/grok';
 
-type KindForString<T extends string> = { readonly $kind: T };
+type KindForString<T extends string> = { readonly $kind: T; };
 export type Kind<T extends string, D> = D & KindForString<T>;
 export type KindConstraint = KindForString<string>;
 
@@ -16,7 +16,7 @@ export type ComposerComposition<
 
   build: LayerBuilderFunction<GivenInput, GivenOutput>;
   invoke: BaseFunction<GivenInput, GivenOutput>;
-}
+};
 
 export type Definition<
   InputInbound,
@@ -36,22 +36,51 @@ export type LayerEnforceNextPassThrough = Kind<'next:passthtrough', {
 
 export type LayerNextFunction<NewInput, Output> = (input: NewInput) => Output;
 
+type ClassVariant<T> = {
+  invoke: T;
+};
+
+export type LayerClass<
+  CurrentInput,
+  CurrentOutput extends OutputKind,
+  NewInput,
+  NewOutput extends OutputKind,
+> = ClassVariant<LayerFunction<CurrentInput, CurrentOutput, NewInput, NewOutput>>;
+
+export type LayerFunction<
+  CurrentInput,
+  CurrentOutput extends OutputKind,
+  NewInput,
+  NewOutput extends OutputKind,
+> = (input: CurrentInput, next: LayerNextFunction<NewInput, NewOutput>) => CurrentOutput;
+
 export type Layer<
   CurrentInput,
   CurrentOutput extends OutputKind,
   NewInput,
   NewOutput extends OutputKind,
-> = {
-  invoke(input: CurrentInput, next: LayerNextFunction<NewInput, NewOutput>): CurrentOutput;
-};
+> = (
+  | LayerClass<CurrentInput, CurrentOutput, NewInput, NewOutput>
+  | LayerFunction<CurrentInput, CurrentOutput, NewInput, NewOutput>
+);
 
+export type TerminusClass<
+  GivenInput,
+  GivenOutput extends OutputKind,
+> = ClassVariant<BaseFunction<GivenInput, GivenOutput>>;
+
+export type TerminusFunction<
+  GivenInput,
+  GivenOutput extends OutputKind,
+> = BaseFunction<GivenInput, GivenOutput>;
 
 export type Terminus<
   GivenInput,
   GivenOutput extends OutputKind,
-> = {
-  invoke: BaseFunction<GivenInput, GivenOutput>;
-};
+> = (
+  | TerminusClass<GivenInput, GivenOutput>
+  | TerminusFunction<GivenInput, GivenOutput>
+);
 
 export type LayerKind = Layer<any, any, any, any>;
 export type TerminusKind = Terminus<any, any>;
@@ -79,21 +108,21 @@ export type ComposerWithLayer<
   InitialOutput extends OutputKind,
   GivenLayer extends LayerKind,
 > = (
-  Composer<
-    (
-      GivenLayer extends Layer<any, any, infer I, any>
+    Composer<
+      (
+        GivenLayer extends Layer<any, any, infer I, any>
         ? ResolveCurrentInput<CurrentInput, I>
         : 'Error:CannotInferGivenLayer'
-    ),
-    (
-      GivenLayer extends Layer<any, any, any, infer I>
+      ),
+      (
+        GivenLayer extends Layer<any, any, any, infer I>
         ? ResolveCurrentOutput<CurrentOutput, I>
         : 'Error:CannotInferGivenLayer'
-    ),
-    InitialInput,
-    InitialOutput
-  >
-);
+      ),
+      InitialInput,
+      InitialOutput
+    >
+  );
 
 export type ComposerKind = Composer<any, any, any, any>;
 
@@ -109,7 +138,7 @@ export class Composer<
     return new this();
   }
 
-  protected constructor () {}
+  protected constructor() { }
 
   public use<
     GivenLayer extends Layer<
@@ -121,21 +150,21 @@ export class Composer<
     GivenInput extends CurrentInput,
     GivenOutput extends CurrentOutput,
   >(Layer: GivenLayer): (
-    Composer<
-      (
-        GivenLayer extends Layer<any, any, infer I, any>
+      Composer<
+        (
+          GivenLayer extends Layer<any, any, infer I, any>
           ? ResolveCurrentInput<CurrentInput, I>
           : 'Error:CannotInferGivenLayer'
-      ),
-      (
-        GivenLayer extends Layer<any, any, any, infer I>
+        ),
+        (
+          GivenLayer extends Layer<any, any, any, infer I>
           ? ResolveCurrentOutput<CurrentOutput, I>
           : 'Error:CannotInferGivenLayer'
-      ),
-      InitialInput,
-      InitialOutput
-    >
-  ) {
+        ),
+        InitialInput,
+        InitialOutput
+      >
+    ) {
     this.layers.push(Layer);
 
     return this as any;
@@ -146,34 +175,62 @@ export class Composer<
     GivenInput extends CurrentInput,
     GivenOutput extends CurrentOutput,
   >(terminus: T): ComposerComposition<InitialInput, InitialOutput> {
+    const terminusInvokable = extractInvokableTerminus(terminus as any);
+
     const build: LayerBuilderFunction<InitialInput, InitialOutput> = (instrument) => {
       if (this.layers.length === 0) {
         if (instrument === undefined) {
-          return terminus.invoke as LayerBuilderPassThrough;
+          return terminusInvokable as LayerBuilderPassThrough;
         }
 
-        return instrument(terminus, terminus.invoke);
+        return instrument(terminus, terminusInvokable);
       }
 
       if (instrument === undefined) {
         return this.layers.reduceRight<LayerBuilderPassThrough>((next, layer) => {
-          return (input: any) => layer.invoke(input, next);
-        }, terminus.invoke);
+          return (input: any) => extractInvokableLayer(layer)(input, next);
+        }, terminusInvokable);
       }
 
       return this.layers.reduceRight<LayerBuilderPassThrough>((next, layer) => {
-        return instrument(layer, (input: any) => layer.invoke(input, next));
-      }, terminus.invoke);
+        return instrument(layer, (input: any) => extractInvokableLayer(layer)(input, next));
+      }, terminusInvokable);
     };
 
     return {
       layers: this.layers as any,
 
       build,
-      invoke: (input) => build()(input),
+      invoke: build(),
     };
   }
 }
+
+export const extractInvokableLayer = <
+  T extends Layer<A, B, C, D>,
+  A = T extends Layer<infer I, any, any, any> ? I : never,
+  B extends OutputKind = T extends Layer<any, infer I, any, any> ? I : never,
+  C = T extends Layer<any, any, infer I, any> ? I : never,
+  D extends OutputKind = T extends Layer<any, any, any, infer I> ? I : never,
+>(value: T): LayerFunction<A, B, C, D> => {
+  if ((value as LayerClass<A, B, C, D>).invoke !== undefined) {
+    return (value as LayerClass<A, B, C, D>).invoke;
+  }
+
+  return value as LayerFunction<A, B, C, D>;
+};
+
+export const extractInvokableTerminus = <
+  T extends Terminus<A, B>,
+  A = T extends Terminus<infer I, any> ? I : never,
+  B extends OutputKind = T extends Terminus<any, infer I> ? I : never,
+>(value: T): TerminusFunction<A, B> => {
+  if ((value as TerminusClass<A, B>).invoke !== undefined) {
+    return (value as TerminusClass<A, B>).invoke;
+  }
+
+  return value as TerminusFunction<A, B>;
+};
 
 type LayerBuilderPassThrough = BaseFunction<any, any>;
 

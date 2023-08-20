@@ -1,5 +1,5 @@
-import { MockedObject } from 'vitest';
-import { Composer, ComposerKind, Kind, Layer, LayerKind, OutputKind, Terminus, TerminusKind } from './index';
+import { MockedFunction, MockedObject } from 'vitest';
+import { Composer, ComposerKind, Kind, Layer, LayerClass, LayerFunction, OutputKind, Terminus, TerminusClass, TerminusFunction } from './index';
 
 export type TestBaseInput = {
   readonly id: string;
@@ -18,16 +18,44 @@ const createOutput = <O extends OutputKind>(kind: O['$kind'], data: Omit<O, '$ki
   } as O;
 };
 
-const createTerminusMock = <T extends TerminusKind>(): MockedObject<T> => {
+const createTerminusClassMock = <
+  T extends Terminus<A, B>,
+  A = T extends Terminus<infer I, any> ? I : never,
+  B extends OutputKind = T extends Terminus<any, infer I> ? I : never,
+>(): MockedObject<TerminusClass<A, B>> => {
   return {
     invoke: vi.fn(),
-  } as unknown as MockedObject<T>;
+  } as unknown as MockedObject<TerminusClass<A, B>>;
 };
 
-const createLayerMock = <T extends LayerKind>(): MockedObject<T> => {
+const createTerminusFunctionMock = <
+  T extends Terminus<A, B>,
+  A = T extends Terminus<infer I, any> ? I : never,
+  B extends OutputKind = T extends Terminus<any, infer I> ? I : never,
+>(): MockedFunction<TerminusFunction<A, B>> => {
+  return vi.fn() as MockedFunction<TerminusFunction<A, B>>;
+};
+
+const createLayerClassMock = <
+  T extends Layer<A, B, C, D>,
+  A = T extends Layer<infer I, any, any, any> ? I : never,
+  B extends OutputKind = T extends Layer<any, infer I, any, any> ? I : never,
+  C = T extends Layer<any, any, infer I, any> ? I : never,
+  D extends OutputKind = T extends Layer<any, any, any, infer I> ? I : never,
+>(): MockedObject<LayerClass<A, B, C, D>> => {
   return {
     invoke: vi.fn(),
-  } as unknown as MockedObject<T>;
+  } as unknown as MockedObject<LayerClass<A, B, C, D>>;
+};
+
+const createLayerFunctionMock = <
+  T extends Layer<A, B, C, D>,
+  A = T extends Layer<infer I, any, any, any> ? I : never,
+  B extends OutputKind = T extends Layer<any, infer I, any, any> ? I : never,
+  C = T extends Layer<any, any, infer I, any> ? I : never,
+  D extends OutputKind = T extends Layer<any, any, any, infer I> ? I : never,
+>(): MockedFunction<LayerFunction<A, B, C, D>> => {
+  return vi.fn() as MockedFunction<LayerFunction<A, B, C, D>>;
 };
 
 const assertInputType = <T, X extends T>() => { };
@@ -35,14 +63,6 @@ const assertOutputType = <T extends X, X>() => { };
 
 type InferComposerCurrentInput<T extends ComposerKind> = T extends Composer<infer I, any, any, any> ? I : never;
 type InferComposerCurrentOutput<T extends ComposerKind> = T extends Composer<any, infer I, any, any> ? I : never;
-
-const TEST_BASE_INPUT: TestBaseInput = {
-  id: 'test:id',
-  name: 'test:name',
-  random: 3,
-};
-
-const TEST_NEXT_PASSTHROUGH = (input: any, next: any) => next(input);
 
 describe(Composer.name, (): void => {
   describe('using class style', (): void => {
@@ -54,7 +74,7 @@ describe(Composer.name, (): void => {
 
       // -- Terminus
 
-      const terminus = createTerminusMock<Terminus<TestBaseInput, TestBaseOutput>>();
+      const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.invoke.mockReturnValueOnce(
         createOutput('o:test:status', {
@@ -68,10 +88,18 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(0);
 
-      const result = composition.invoke(TEST_BASE_INPUT);
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(terminus.invoke).toBeCalledTimes(1);
-      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>(TEST_BASE_INPUT);
+      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(result).toStrictEqual<OutputKind>(
         createOutput('o:test:status', {
@@ -85,9 +113,11 @@ describe(Composer.name, (): void => {
 
       // -- Layer
 
-      const layer1 = createLayerMock<Layer<any, any, any, any>>();
+      const layer1 = createLayerClassMock<Layer<any, any, any, any>>();
 
-      layer1.invoke.mockImplementationOnce(TEST_NEXT_PASSTHROUGH);
+      layer1.invoke.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
 
       const composer2 = composer1.use(layer1);
       //    ^?
@@ -97,7 +127,7 @@ describe(Composer.name, (): void => {
 
       // -- Terminus
 
-      const terminus = createTerminusMock<Terminus<TestBaseInput, TestBaseOutput>>();
+      const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.invoke.mockReturnValueOnce(
         createOutput('o:test:status', {
@@ -111,16 +141,28 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke(TEST_BASE_INPUT);
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(layer1.invoke).toBeCalledTimes(1);
       expect(layer1.invoke).toBeCalledWith<[TestBaseInput, Function]>(
-        TEST_BASE_INPUT,
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
         expect.any(Function),
       );
 
       expect(terminus.invoke).toBeCalledTimes(1);
-      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>(TEST_BASE_INPUT);
+      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(result).toStrictEqual<OutputKind>(
         createOutput('o:test:status', {
@@ -134,9 +176,11 @@ describe(Composer.name, (): void => {
 
       // -- Layer
 
-      const layer1 = createLayerMock<Layer<TestBaseInput, any, any, any>>();
+      const layer1 = createLayerClassMock<Layer<TestBaseInput, any, any, any>>();
 
-      layer1.invoke.mockImplementationOnce(TEST_NEXT_PASSTHROUGH);
+      layer1.invoke.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
 
       const composer2 = composer1.use(layer1);
       //    ^?
@@ -146,7 +190,7 @@ describe(Composer.name, (): void => {
 
       // -- Terminus
 
-      const terminus = createTerminusMock<Terminus<TestBaseInput, TestBaseOutput>>();
+      const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.invoke.mockReturnValueOnce(
         createOutput('o:test:status', {
@@ -160,16 +204,28 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke(TEST_BASE_INPUT);
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(layer1.invoke).toBeCalledTimes(1);
       expect(layer1.invoke).toBeCalledWith<[TestBaseInput, Function]>(
-        TEST_BASE_INPUT,
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
         expect.any(Function),
       );
 
       expect(terminus.invoke).toBeCalledTimes(1);
-      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>(TEST_BASE_INPUT);
+      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(result).toStrictEqual<OutputKind>(
         createOutput('o:test:status', {
@@ -187,9 +243,11 @@ describe(Composer.name, (): void => {
         readonly id: string;
       };
 
-      const layer1 = createLayerMock<Layer<layerCurrentSubsetInput, any, any, any>>();
+      const layer1 = createLayerClassMock<Layer<layerCurrentSubsetInput, any, any, any>>();
 
-      layer1.invoke.mockImplementationOnce(TEST_NEXT_PASSTHROUGH);
+      layer1.invoke.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
 
       const composer2 = composer1.use(layer1);
       //    ^?
@@ -199,7 +257,7 @@ describe(Composer.name, (): void => {
 
       // -- Terminus
 
-      const terminus = createTerminusMock<Terminus<TestBaseInput, TestBaseOutput>>();
+      const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.invoke.mockReturnValueOnce(
         createOutput('o:test:status', {
@@ -213,16 +271,28 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke(TEST_BASE_INPUT);
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(layer1.invoke).toBeCalledTimes(1);
       expect(layer1.invoke).toBeCalledWith<[TestBaseInput, Function]>(
-        TEST_BASE_INPUT,
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
         expect.any(Function),
       );
 
       expect(terminus.invoke).toBeCalledTimes(1);
-      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>(TEST_BASE_INPUT);
+      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(result).toStrictEqual<OutputKind>(
         createOutput('o:test:status', {
@@ -240,9 +310,11 @@ describe(Composer.name, (): void => {
         readonly authenticated: boolean;
       };
 
-      const layer1 = createLayerMock<Layer<any, any, NewInputWithAuthentication, any>>();
+      const layer1 = createLayerClassMock<Layer<any, any, NewInputWithAuthentication, any>>();
 
-      layer1.invoke.mockImplementationOnce(TEST_NEXT_PASSTHROUGH);
+      layer1.invoke.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
 
       const composer2 = composer1.use(layer1);
       //    ^?
@@ -252,7 +324,7 @@ describe(Composer.name, (): void => {
 
       // -- Terminus
 
-      const terminus = createTerminusMock<Terminus<TestBaseInput, TestBaseOutput>>();
+      const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.invoke.mockReturnValueOnce(
         createOutput('o:test:status', {
@@ -267,16 +339,28 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke(TEST_BASE_INPUT);
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(layer1.invoke).toBeCalledTimes(1);
       expect(layer1.invoke).toBeCalledWith<[TestBaseInput, Function]>(
-        TEST_BASE_INPUT,
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
         expect.any(Function),
       );
 
       expect(terminus.invoke).toBeCalledTimes(1);
-      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>(TEST_BASE_INPUT);
+      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(result).toStrictEqual<OutputKind>(
         createOutput('o:test:status', {
@@ -294,9 +378,11 @@ describe(Composer.name, (): void => {
         readonly authenticated: boolean;
       }>;
 
-      const layer1 = createLayerMock<Layer<any, any, any, NewOutputWithAuthentication>>();
+      const layer1 = createLayerClassMock<Layer<any, any, any, NewOutputWithAuthentication>>();
 
-      layer1.invoke.mockImplementationOnce(TEST_NEXT_PASSTHROUGH);
+      layer1.invoke.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
 
       const composer2 = composer1.use(layer1);
       //    ^?
@@ -306,7 +392,7 @@ describe(Composer.name, (): void => {
 
       // -- Terminus
 
-      const terminus = createTerminusMock<Terminus<TestBaseInput, TestBaseOutput>>();
+      const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.invoke.mockReturnValueOnce(
         createOutput('o:test:status', {
@@ -320,16 +406,28 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke(TEST_BASE_INPUT);
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(layer1.invoke).toBeCalledTimes(1);
       expect(layer1.invoke).toBeCalledWith<[TestBaseInput, Function]>(
-        TEST_BASE_INPUT,
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
         expect.any(Function),
       );
 
       expect(terminus.invoke).toBeCalledTimes(1);
-      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>(TEST_BASE_INPUT);
+      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(result).toStrictEqual<OutputKind>(
         createOutput('o:test:status', {
@@ -347,9 +445,11 @@ describe(Composer.name, (): void => {
         readonly authenticated: boolean;
       };
 
-      const layer1 = createLayerMock<Layer<any, any, NewInputWithAuthentication, any>>();
+      const layer1 = createLayerClassMock<Layer<any, any, NewInputWithAuthentication, any>>();
 
-      layer1.invoke.mockImplementationOnce(TEST_NEXT_PASSTHROUGH);
+      layer1.invoke.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
 
       const composer2 = composer1.use(layer1);
       //    ^?
@@ -359,7 +459,7 @@ describe(Composer.name, (): void => {
 
       // -- Terminus
 
-      const terminus = createTerminusMock<Terminus<NewInputWithAuthentication, TestBaseOutput>>();
+      const terminus = createTerminusClassMock<Terminus<NewInputWithAuthentication, TestBaseOutput>>();
 
       terminus.invoke.mockReturnValueOnce(
         createOutput('o:test:status', {
@@ -373,16 +473,28 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke(TEST_BASE_INPUT);
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(layer1.invoke).toBeCalledTimes(1);
       expect(layer1.invoke).toBeCalledWith<[TestBaseInput, Function]>(
-        TEST_BASE_INPUT,
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
         expect.any(Function),
       );
 
       expect(terminus.invoke).toBeCalledTimes(1);
-      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>(TEST_BASE_INPUT);
+      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(result).toStrictEqual<OutputKind>(
         createOutput('o:test:status', {
@@ -400,9 +512,11 @@ describe(Composer.name, (): void => {
         readonly authenticated: boolean;
       }>;
 
-      const layer1 = createLayerMock<Layer<any, any, any, NewOutputWithAuthentication>>();
+      const layer1 = createLayerClassMock<Layer<any, any, any, NewOutputWithAuthentication>>();
 
-      layer1.invoke.mockImplementationOnce(TEST_NEXT_PASSTHROUGH);
+      layer1.invoke.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
 
       const composer2 = composer1.use(layer1);
       //    ^?
@@ -412,7 +526,7 @@ describe(Composer.name, (): void => {
 
       // -- Terminus
 
-      const terminus = createTerminusMock<Terminus<TestBaseInput, NewOutputWithAuthentication>>();
+      const terminus = createTerminusClassMock<Terminus<TestBaseInput, NewOutputWithAuthentication>>();
 
       terminus.invoke.mockReturnValueOnce(
         createOutput('o:test:authenticated', {
@@ -426,16 +540,28 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke(TEST_BASE_INPUT);
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(layer1.invoke).toBeCalledTimes(1);
       expect(layer1.invoke).toBeCalledWith<[TestBaseInput, Function]>(
-        TEST_BASE_INPUT,
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
         expect.any(Function),
       );
 
       expect(terminus.invoke).toBeCalledTimes(1);
-      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>(TEST_BASE_INPUT);
+      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(result).toStrictEqual<OutputKind>(
         createOutput('o:test:authenticated', {
@@ -453,9 +579,11 @@ describe(Composer.name, (): void => {
         readonly authenticated: boolean;
       };
 
-      const layer1 = createLayerMock<Layer<any, any, NewInputWithAuthentication, any>>();
+      const layer1 = createLayerClassMock<Layer<any, any, NewInputWithAuthentication, any>>();
 
-      layer1.invoke.mockImplementationOnce(TEST_NEXT_PASSTHROUGH);
+      layer1.invoke.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
 
       const composer2 = composer1.use(layer1);
       //    ^?
@@ -465,9 +593,11 @@ describe(Composer.name, (): void => {
 
       // -- Layer
 
-      const layer2 = createLayerMock<Layer<NewInputWithAuthentication, any, any, any>>();
+      const layer2 = createLayerClassMock<Layer<NewInputWithAuthentication, any, any, any>>();
 
-      layer2.invoke.mockImplementationOnce(TEST_NEXT_PASSTHROUGH);
+      layer2.invoke.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
 
       const composer3 = composer2.use(layer2);
       //    ^?
@@ -477,7 +607,7 @@ describe(Composer.name, (): void => {
 
       // -- Terminus
 
-      const terminus = createTerminusMock<Terminus<TestBaseInput, TestBaseOutput>>();
+      const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.invoke.mockReturnValueOnce(
         createOutput('o:test:status', {
@@ -491,22 +621,38 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(2);
 
-      const result = composition.invoke(TEST_BASE_INPUT);
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(layer1.invoke).toBeCalledTimes(1);
       expect(layer1.invoke).toBeCalledWith<[TestBaseInput, Function]>(
-        TEST_BASE_INPUT,
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
         expect.any(Function),
       );
 
       expect(layer2.invoke).toBeCalledTimes(1);
       expect(layer2.invoke).toBeCalledWith<[TestBaseInput, Function]>(
-        TEST_BASE_INPUT,
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
         expect.any(Function),
       );
 
       expect(terminus.invoke).toBeCalledTimes(1);
-      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>(TEST_BASE_INPUT);
+      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(result).toStrictEqual<OutputKind>(
         createOutput('o:test:status', {
@@ -524,9 +670,11 @@ describe(Composer.name, (): void => {
         readonly authenticated: boolean;
       }>;
 
-      const layer1 = createLayerMock<Layer<any, any, any, NewOutputWithAuthentication>>();
+      const layer1 = createLayerClassMock<Layer<any, any, any, NewOutputWithAuthentication>>();
 
-      layer1.invoke.mockImplementationOnce(TEST_NEXT_PASSTHROUGH);
+      layer1.invoke.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
 
       const composer2 = composer1.use(layer1);
       //    ^?
@@ -536,9 +684,11 @@ describe(Composer.name, (): void => {
 
       // -- Layer
 
-      const layer2 = createLayerMock<Layer<any, NewOutputWithAuthentication, any, any>>();
+      const layer2 = createLayerClassMock<Layer<any, NewOutputWithAuthentication, any, any>>();
 
-      layer2.invoke.mockImplementationOnce(TEST_NEXT_PASSTHROUGH);
+      layer2.invoke.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
 
       const composer3 = composer2.use(layer2);
       //    ^?
@@ -548,7 +698,7 @@ describe(Composer.name, (): void => {
 
       // -- Terminus
 
-      const terminus = createTerminusMock<Terminus<TestBaseInput, TestBaseOutput>>();
+      const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.invoke.mockReturnValueOnce(
         createOutput('o:test:status', {
@@ -562,22 +712,38 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(2);
 
-      const result = composition.invoke(TEST_BASE_INPUT);
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(layer1.invoke).toBeCalledTimes(1);
       expect(layer1.invoke).toBeCalledWith<[TestBaseInput, Function]>(
-        TEST_BASE_INPUT,
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
         expect.any(Function),
       );
 
       expect(layer2.invoke).toBeCalledTimes(1);
       expect(layer2.invoke).toBeCalledWith<[TestBaseInput, Function]>(
-        TEST_BASE_INPUT,
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
         expect.any(Function),
       );
 
       expect(terminus.invoke).toBeCalledTimes(1);
-      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>(TEST_BASE_INPUT);
+      expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
 
       expect(result).toStrictEqual<OutputKind>(
         createOutput('o:test:status', {
@@ -596,7 +762,7 @@ describe(Composer.name, (): void => {
           readonly authenticated: boolean;
         };
 
-        const terminus = createTerminusMock<Terminus<ExpectInput, TestBaseOutput>>();
+        const terminus = createTerminusClassMock<Terminus<ExpectInput, TestBaseOutput>>();
 
         terminus.invoke.mockReturnValueOnce(
           createOutput('o:test:status', {
@@ -613,10 +779,18 @@ describe(Composer.name, (): void => {
 
         expect(composition.layers.length).toStrictEqual(0);
 
-        const result = composition.invoke(TEST_BASE_INPUT);
+        const result = composition.invoke({
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        });
 
         expect(terminus.invoke).toBeCalledTimes(1);
-        expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>(TEST_BASE_INPUT);
+        expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>({
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        });
 
         expect(result).toStrictEqual<OutputKind>(
           createOutput('o:test:status', {
@@ -634,7 +808,7 @@ describe(Composer.name, (): void => {
           readonly authenticated: boolean;
         }>;
 
-        const terminus = createTerminusMock<Terminus<TestBaseInput, NewOutputWithAuthentication>>();
+        const terminus = createTerminusClassMock<Terminus<TestBaseInput, NewOutputWithAuthentication>>();
 
         terminus.invoke.mockReturnValueOnce(
           createOutput('o:test:authenticated', {
@@ -651,10 +825,18 @@ describe(Composer.name, (): void => {
 
         expect(composition.layers.length).toStrictEqual(0);
 
-        const result = composition.invoke(TEST_BASE_INPUT);
+        const result = composition.invoke({
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        });
 
         expect(terminus.invoke).toBeCalledTimes(1);
-        expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>(TEST_BASE_INPUT);
+        expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>({
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        });
 
         expect(result).toStrictEqual<OutputKind>(
           createOutput('o:test:authenticated', {
@@ -672,9 +854,11 @@ describe(Composer.name, (): void => {
           readonly authenticated: boolean;
         };
 
-        const layer1 = createLayerMock<Layer<NewOutputWithAuthentication, any, any, any>>();
+        const layer1 = createLayerClassMock<Layer<NewOutputWithAuthentication, any, any, any>>();
 
-        layer1.invoke.mockImplementationOnce(TEST_NEXT_PASSTHROUGH);
+        layer1.invoke.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
 
         const composer2 = composer1.use(
           // @ts-expect-error missing expected property "authenticated"
@@ -683,7 +867,7 @@ describe(Composer.name, (): void => {
 
         // -- Terminus
 
-        const terminus = createTerminusMock<Terminus<TestBaseInput, TestBaseOutput>>();
+        const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
         terminus.invoke.mockReturnValueOnce(
           createOutput('o:test:status', {
@@ -697,16 +881,28 @@ describe(Composer.name, (): void => {
 
         expect(composition.layers.length).toStrictEqual(1);
 
-        const result = composition.invoke(TEST_BASE_INPUT);
+        const result = composition.invoke({
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        });
 
         expect(layer1.invoke).toBeCalledTimes(1);
         expect(layer1.invoke).toBeCalledWith<[TestBaseInput, Function]>(
-          TEST_BASE_INPUT,
+          {
+            id: 'test:id',
+            name: 'test:name',
+            random: 3,
+          },
           expect.any(Function),
         );
 
         expect(terminus.invoke).toBeCalledTimes(1);
-        expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>(TEST_BASE_INPUT);
+        expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>({
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        });
 
         expect(result).toStrictEqual<OutputKind>(
           createOutput('o:test:status', {
@@ -724,9 +920,11 @@ describe(Composer.name, (): void => {
           readonly authenticated: boolean;
         }>;
 
-        const layer1 = createLayerMock<Layer<any, NewOutputWithAuthentication, any, any>>();
+        const layer1 = createLayerClassMock<Layer<any, NewOutputWithAuthentication, any, any>>();
 
-        layer1.invoke.mockImplementationOnce(TEST_NEXT_PASSTHROUGH);
+        layer1.invoke.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
 
         const composer2 = composer1.use(
           // @ts-expect-error response is not in current output union
@@ -735,7 +933,7 @@ describe(Composer.name, (): void => {
 
         // -- Terminus
 
-        const terminus = createTerminusMock<Terminus<TestBaseInput, TestBaseOutput>>();
+        const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
         terminus.invoke.mockReturnValueOnce(
           createOutput('o:test:status', {
@@ -749,16 +947,942 @@ describe(Composer.name, (): void => {
 
         expect(composition.layers.length).toStrictEqual(1);
 
-        const result = composition.invoke(TEST_BASE_INPUT);
+        const result = composition.invoke({
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        });
 
         expect(layer1.invoke).toBeCalledTimes(1);
         expect(layer1.invoke).toBeCalledWith<[TestBaseInput, Function]>(
-          TEST_BASE_INPUT,
+          {
+            id: 'test:id',
+            name: 'test:name',
+            random: 3,
+          },
           expect.any(Function),
         );
 
         expect(terminus.invoke).toBeCalledTimes(1);
-        expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>(TEST_BASE_INPUT);
+        expect(terminus.invoke).toBeCalledWith<[TestBaseInput]>({
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        });
+
+        expect(result).toStrictEqual<OutputKind>(
+          createOutput('o:test:status', {
+            status: 123,
+          })
+        );
+      });
+    });
+  });
+
+  describe('using function style', (): void => {
+    it('with terminus', (): void => {
+      const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
+
+      assertInputType<TestBaseInput, InferComposerCurrentInput<typeof composer1>>();
+      assertOutputType<TestBaseOutput, InferComposerCurrentOutput<typeof composer1>>();
+
+      // -- Terminus
+
+      const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
+
+      terminus.mockReturnValueOnce(
+        createOutput('o:test:status', {
+          status: 123,
+        })
+      );
+
+      const composition = composer1.end(terminus);
+
+      // -- Result
+
+      expect(composition.layers.length).toStrictEqual(0);
+
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(terminus).toBeCalledTimes(1);
+      expect(terminus).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(result).toStrictEqual<OutputKind>(
+        createOutput('o:test:status', {
+          status: 123,
+        })
+      );
+    });
+
+    it('with layer, pass through, makes no changes', (): void => {
+      const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
+
+      // -- Layer
+
+      const layer1 = createLayerFunctionMock<Layer<any, any, any, any>>();
+
+      layer1.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
+
+      const composer2 = composer1.use(layer1);
+      //    ^?
+
+      assertInputType<TestBaseInput, InferComposerCurrentInput<typeof composer2>>();
+      assertOutputType<TestBaseOutput, InferComposerCurrentOutput<typeof composer2>>();
+
+      // -- Terminus
+
+      const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
+
+      terminus.mockReturnValueOnce(
+        createOutput('o:test:status', {
+          status: 123,
+        })
+      );
+
+      const composition = composer2.end(terminus);
+
+      // -- Result
+
+      expect(composition.layers.length).toStrictEqual(1);
+
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(layer1).toBeCalledTimes(1);
+      expect(layer1).toBeCalledWith<[TestBaseInput, Function]>(
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
+        expect.any(Function),
+      );
+
+      expect(terminus).toBeCalledTimes(1);
+      expect(terminus).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(result).toStrictEqual<OutputKind>(
+        createOutput('o:test:status', {
+          status: 123,
+        })
+      );
+    });
+
+    it('with layer, expecting exact current input, makes no changes', (): void => {
+      const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
+
+      // -- Layer
+
+      const layer1 = createLayerFunctionMock<Layer<TestBaseInput, any, any, any>>();
+
+      layer1.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
+
+      const composer2 = composer1.use(layer1);
+      //    ^?
+
+      assertInputType<TestBaseInput, InferComposerCurrentInput<typeof composer2>>();
+      assertOutputType<TestBaseOutput, InferComposerCurrentOutput<typeof composer2>>();
+
+      // -- Terminus
+
+      const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
+
+      terminus.mockReturnValueOnce(
+        createOutput('o:test:status', {
+          status: 123,
+        })
+      );
+
+      const composition = composer2.end(terminus);
+
+      // -- Result
+
+      expect(composition.layers.length).toStrictEqual(1);
+
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(layer1).toBeCalledTimes(1);
+      expect(layer1).toBeCalledWith<[TestBaseInput, Function]>(
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
+        expect.any(Function),
+      );
+
+      expect(terminus).toBeCalledTimes(1);
+      expect(terminus).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(result).toStrictEqual<OutputKind>(
+        createOutput('o:test:status', {
+          status: 123,
+        })
+      );
+    });
+
+    it('with layer, expecting subset of the current input, makes no changes', (): void => {
+      const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
+
+      // -- Layer
+
+      type layerCurrentSubsetInput = {
+        readonly id: string;
+      };
+
+      const layer1 = createLayerFunctionMock<Layer<layerCurrentSubsetInput, any, any, any>>();
+
+      layer1.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
+
+      const composer2 = composer1.use(layer1);
+      //    ^?
+
+      assertInputType<TestBaseInput, InferComposerCurrentInput<typeof composer2>>();
+      assertOutputType<TestBaseOutput, InferComposerCurrentOutput<typeof composer2>>();
+
+      // -- Terminus
+
+      const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
+
+      terminus.mockReturnValueOnce(
+        createOutput('o:test:status', {
+          status: 123,
+        })
+      );
+
+      const composition = composer2.end(terminus);
+
+      // -- Result
+
+      expect(composition.layers.length).toStrictEqual(1);
+
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(layer1).toBeCalledTimes(1);
+      expect(layer1).toBeCalledWith<[TestBaseInput, Function]>(
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
+        expect.any(Function),
+      );
+
+      expect(terminus).toBeCalledTimes(1);
+      expect(terminus).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(result).toStrictEqual<OutputKind>(
+        createOutput('o:test:status', {
+          status: 123,
+        })
+      );
+    });
+
+    it('with layer, providing new input, merges with current input', (): void => {
+      const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
+
+      // -- Layer
+
+      type NewInputWithAuthentication = {
+        readonly authenticated: boolean;
+      };
+
+      const layer1 = createLayerFunctionMock<Layer<any, any, NewInputWithAuthentication, any>>();
+
+      layer1.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
+
+      const composer2 = composer1.use(layer1);
+      //    ^?
+
+      assertInputType<TestBaseInput, InferComposerCurrentInput<typeof composer2>>();
+      assertInputType<NewInputWithAuthentication, InferComposerCurrentInput<typeof composer2>>();
+
+      // -- Terminus
+
+      const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
+
+      terminus.mockReturnValueOnce(
+        createOutput('o:test:status', {
+          status: 123,
+        })
+      );
+
+      const composition = composer2.end(terminus);
+
+
+      // -- Result
+
+      expect(composition.layers.length).toStrictEqual(1);
+
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(layer1).toBeCalledTimes(1);
+      expect(layer1).toBeCalledWith<[TestBaseInput, Function]>(
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
+        expect.any(Function),
+      );
+
+      expect(terminus).toBeCalledTimes(1);
+      expect(terminus).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(result).toStrictEqual<OutputKind>(
+        createOutput('o:test:status', {
+          status: 123,
+        })
+      );
+    });
+
+    it('with layer, proving new response, unions with current response', (): void => {
+      const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
+
+      // -- Layer
+
+      type NewOutputWithAuthentication = Kind<'o:test:authenticated', {
+        readonly authenticated: boolean;
+      }>;
+
+      const layer1 = createLayerFunctionMock<Layer<any, any, any, NewOutputWithAuthentication>>();
+
+      layer1.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
+
+      const composer2 = composer1.use(layer1);
+      //    ^?
+
+      assertOutputType<TestBaseOutput, InferComposerCurrentOutput<typeof composer2>>();
+      assertOutputType<NewOutputWithAuthentication, InferComposerCurrentOutput<typeof composer2>>();
+
+      // -- Terminus
+
+      const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
+
+      terminus.mockReturnValueOnce(
+        createOutput('o:test:status', {
+          status: 123,
+        })
+      );
+
+      const composition = composer2.end(terminus);
+
+      // -- Result
+
+      expect(composition.layers.length).toStrictEqual(1);
+
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(layer1).toBeCalledTimes(1);
+      expect(layer1).toBeCalledWith<[TestBaseInput, Function]>(
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
+        expect.any(Function),
+      );
+
+      expect(terminus).toBeCalledTimes(1);
+      expect(terminus).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(result).toStrictEqual<OutputKind>(
+        createOutput('o:test:status', {
+          status: 123,
+        })
+      );
+    });
+
+    it('with layer, providing new input, terminus expecting new input, merges with current input and allows terminus', (): void => {
+      const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
+
+      // -- Layer
+
+      type NewInputWithAuthentication = {
+        readonly authenticated: boolean;
+      };
+
+      const layer1 = createLayerFunctionMock<Layer<any, any, NewInputWithAuthentication, any>>();
+
+      layer1.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
+
+      const composer2 = composer1.use(layer1);
+      //    ^?
+
+      assertInputType<TestBaseInput, InferComposerCurrentInput<typeof composer2>>();
+      assertInputType<NewInputWithAuthentication, InferComposerCurrentInput<typeof composer2>>();
+
+      // -- Terminus
+
+      const terminus = createTerminusFunctionMock<Terminus<NewInputWithAuthentication, TestBaseOutput>>();
+
+      terminus.mockReturnValueOnce(
+        createOutput('o:test:status', {
+          status: 123,
+        })
+      );
+
+      const composition = composer2.end(terminus);
+
+      // -- Result
+
+      expect(composition.layers.length).toStrictEqual(1);
+
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(layer1).toBeCalledTimes(1);
+      expect(layer1).toBeCalledWith<[TestBaseInput, Function]>(
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
+        expect.any(Function),
+      );
+
+      expect(terminus).toBeCalledTimes(1);
+      expect(terminus).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(result).toStrictEqual<OutputKind>(
+        createOutput('o:test:status', {
+          status: 123,
+        })
+      );
+    });
+
+    it('with layer, proving new response, terminus expects new response, unions with current response and allows terminus', (): void => {
+      const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
+
+      // -- Layer
+
+      type NewOutputWithAuthentication = Kind<'o:test:authenticated', {
+        readonly authenticated: boolean;
+      }>;
+
+      const layer1 = createLayerFunctionMock<Layer<any, any, any, NewOutputWithAuthentication>>();
+
+      layer1.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
+
+      const composer2 = composer1.use(layer1);
+      //    ^?
+
+      assertOutputType<TestBaseOutput, InferComposerCurrentOutput<typeof composer2>>();
+      assertOutputType<NewOutputWithAuthentication, InferComposerCurrentOutput<typeof composer2>>();
+
+      // -- Terminus
+
+      const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, NewOutputWithAuthentication>>();
+
+      terminus.mockReturnValueOnce(
+        createOutput('o:test:authenticated', {
+          authenticated: false,
+        })
+      );
+
+      const composition = composer2.end(terminus);
+
+      // -- Result
+
+      expect(composition.layers.length).toStrictEqual(1);
+
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(layer1).toBeCalledTimes(1);
+      expect(layer1).toBeCalledWith<[TestBaseInput, Function]>(
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
+        expect.any(Function),
+      );
+
+      expect(terminus).toBeCalledTimes(1);
+      expect(terminus).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(result).toStrictEqual<OutputKind>(
+        createOutput('o:test:authenticated', {
+          authenticated: false,
+        })
+      );
+    });
+
+    it('with layers, first providing new input, second expecting new input, merges with current input and allows second layer', (): void => {
+      const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
+
+      // -- Layer
+
+      type NewInputWithAuthentication = {
+        readonly authenticated: boolean;
+      };
+
+      const layer1 = createLayerFunctionMock<Layer<any, any, NewInputWithAuthentication, any>>();
+
+      layer1.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
+
+      const composer2 = composer1.use(layer1);
+      //    ^?
+
+      assertInputType<TestBaseInput, InferComposerCurrentInput<typeof composer2>>();
+      assertInputType<NewInputWithAuthentication, InferComposerCurrentInput<typeof composer2>>();
+
+      // -- Layer
+
+      const layer2 = createLayerFunctionMock<Layer<NewInputWithAuthentication, any, any, any>>();
+
+      layer2.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
+
+      const composer3 = composer2.use(layer2);
+      //    ^?
+
+      assertInputType<TestBaseInput, InferComposerCurrentInput<typeof composer3>>();
+      assertInputType<NewInputWithAuthentication, InferComposerCurrentInput<typeof composer3>>();
+
+      // -- Terminus
+
+      const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
+
+      terminus.mockReturnValueOnce(
+        createOutput('o:test:status', {
+          status: 123,
+        })
+      );
+
+      const composition = composer3.end(terminus);
+
+      // -- Result
+
+      expect(composition.layers.length).toStrictEqual(2);
+
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(layer1).toBeCalledTimes(1);
+      expect(layer1).toBeCalledWith<[TestBaseInput, Function]>(
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
+        expect.any(Function),
+      );
+
+      expect(layer2).toBeCalledTimes(1);
+      expect(layer2).toBeCalledWith<[TestBaseInput, Function]>(
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
+        expect.any(Function),
+      );
+
+      expect(terminus).toBeCalledTimes(1);
+      expect(terminus).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(result).toStrictEqual<OutputKind>(
+        createOutput('o:test:status', {
+          status: 123,
+        })
+      );
+    });
+
+    it('with layers, first providing new response, second expecting new response, unions with current response and allows second layer', (): void => {
+      const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
+
+      // -- Layer
+
+      type NewOutputWithAuthentication = Kind<'o:test:authenticated', {
+        readonly authenticated: boolean;
+      }>;
+
+      const layer1 = createLayerFunctionMock<Layer<any, any, any, NewOutputWithAuthentication>>();
+
+      layer1.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
+
+      const composer2 = composer1.use(layer1);
+      //    ^?
+
+      assertOutputType<TestBaseOutput, InferComposerCurrentOutput<typeof composer2>>();
+      assertOutputType<NewOutputWithAuthentication, InferComposerCurrentOutput<typeof composer2>>();
+
+      // -- Layer
+
+      const layer2 = createLayerFunctionMock<Layer<any, NewOutputWithAuthentication, any, any>>();
+
+      layer2.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
+
+      const composer3 = composer2.use(layer2);
+      //    ^?
+
+      assertOutputType<TestBaseOutput, InferComposerCurrentOutput<typeof composer3>>();
+      assertOutputType<NewOutputWithAuthentication, InferComposerCurrentOutput<typeof composer3>>();
+
+      // -- Terminus
+
+      const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
+
+      terminus.mockReturnValueOnce(
+        createOutput('o:test:status', {
+          status: 123,
+        })
+      );
+
+      const composition = composer3.end(terminus);
+
+      // -- Result
+
+      expect(composition.layers.length).toStrictEqual(2);
+
+      const result = composition.invoke({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(layer1).toBeCalledTimes(1);
+      expect(layer1).toBeCalledWith<[TestBaseInput, Function]>(
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
+        expect.any(Function),
+      );
+
+      expect(layer2).toBeCalledTimes(1);
+      expect(layer2).toBeCalledWith<[TestBaseInput, Function]>(
+        {
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        },
+        expect.any(Function),
+      );
+
+      expect(terminus).toBeCalledTimes(1);
+      expect(terminus).toBeCalledWith<[TestBaseInput]>({
+        id: 'test:id',
+        name: 'test:name',
+        random: 3,
+      });
+
+      expect(result).toStrictEqual<OutputKind>(
+        createOutput('o:test:status', {
+          status: 123,
+        })
+      );
+    });
+
+    describe('for type only error cases', (): void => {
+      it('with terminus, expected input does not exist, raises build errors', (): void => {
+        const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
+
+        // -- Terminus
+
+        type ExpectInput = {
+          readonly authenticated: boolean;
+        };
+
+        const terminus = createTerminusFunctionMock<Terminus<ExpectInput, TestBaseOutput>>();
+
+        terminus.mockReturnValueOnce(
+          createOutput('o:test:status', {
+            status: 123,
+          })
+        );
+
+        const composition = composer1.end(
+          // @ts-expect-error missing expected property "authenticated"
+          terminus
+        );
+
+        // -- Result
+
+        expect(composition.layers.length).toStrictEqual(0);
+
+        const result = composition.invoke({
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        });
+
+        expect(terminus).toBeCalledTimes(1);
+        expect(terminus).toBeCalledWith<[TestBaseInput]>({
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        });
+
+        expect(result).toStrictEqual<OutputKind>(
+          createOutput('o:test:status', {
+            status: 123,
+          })
+        );
+      });
+
+      it('with terminus, expected output does not exist, raises build errors', (): void => {
+        const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
+
+        // -- Terminus
+
+        type NewOutputWithAuthentication = Kind<'o:test:authenticated', {
+          readonly authenticated: boolean;
+        }>;
+
+        const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, NewOutputWithAuthentication>>();
+
+        terminus.mockReturnValueOnce(
+          createOutput('o:test:authenticated', {
+            authenticated: false,
+          })
+        );
+
+        const composition = composer1.end(
+          // @ts-expect-error expected response is not in current output union
+          terminus
+        );
+
+        // -- Result
+
+        expect(composition.layers.length).toStrictEqual(0);
+
+        const result = composition.invoke({
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        });
+
+        expect(terminus).toBeCalledTimes(1);
+        expect(terminus).toBeCalledWith<[TestBaseInput]>({
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        });
+
+        expect(result).toStrictEqual<OutputKind>(
+          createOutput('o:test:authenticated', {
+            authenticated: false,
+          })
+        );
+      });
+
+      it('with layer, expected input does not exist, raises build errors', (): void => {
+        const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
+
+        // -- Layer
+
+        type NewOutputWithAuthentication = {
+          readonly authenticated: boolean;
+        };
+
+        const layer1 = createLayerFunctionMock<Layer<NewOutputWithAuthentication, any, any, any>>();
+
+        layer1.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
+
+        const composer2 = composer1.use(
+          // @ts-expect-error missing expected property "authenticated"
+          layer1
+        );
+
+        // -- Terminus
+
+        const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
+
+        terminus.mockReturnValueOnce(
+          createOutput('o:test:status', {
+            status: 123,
+          })
+        );
+
+        const composition = composer2.end(terminus);
+
+        // -- Result
+
+        expect(composition.layers.length).toStrictEqual(1);
+
+        const result = composition.invoke({
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        });
+
+        expect(layer1).toBeCalledTimes(1);
+        expect(layer1).toBeCalledWith<[TestBaseInput, Function]>(
+          {
+            id: 'test:id',
+            name: 'test:name',
+            random: 3,
+          },
+          expect.any(Function),
+        );
+
+        expect(terminus).toBeCalledTimes(1);
+        expect(terminus).toBeCalledWith<[TestBaseInput]>({
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        });
+
+        expect(result).toStrictEqual<OutputKind>(
+          createOutput('o:test:status', {
+            status: 123,
+          })
+        );
+      });
+
+      it('with layer, expected output does not exist, raises build errors', (): void => {
+        const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
+
+        // -- Layer
+
+        type NewOutputWithAuthentication = Kind<'o:test:authenticated', {
+          readonly authenticated: boolean;
+        }>;
+
+        const layer1 = createLayerFunctionMock<Layer<any, NewOutputWithAuthentication, any, any>>();
+
+        layer1.mockImplementationOnce((input, next) => {
+        return next(input);
+      });
+
+        const composer2 = composer1.use(
+          // @ts-expect-error response is not in current output union
+          layer1
+        );
+
+        // -- Terminus
+
+        const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
+
+        terminus.mockReturnValueOnce(
+          createOutput('o:test:status', {
+            status: 123,
+          })
+        );
+
+        const composition = composer2.end(terminus);
+
+        // -- Result
+
+        expect(composition.layers.length).toStrictEqual(1);
+
+        const result = composition.invoke({
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        });
+
+        expect(layer1).toBeCalledTimes(1);
+        expect(layer1).toBeCalledWith<[TestBaseInput, Function]>(
+          {
+            id: 'test:id',
+            name: 'test:name',
+            random: 3,
+          },
+          expect.any(Function),
+        );
+
+        expect(terminus).toBeCalledTimes(1);
+        expect(terminus).toBeCalledWith<[TestBaseInput]>({
+          id: 'test:id',
+          name: 'test:name',
+          random: 3,
+        });
 
         expect(result).toStrictEqual<OutputKind>(
           createOutput('o:test:status', {
