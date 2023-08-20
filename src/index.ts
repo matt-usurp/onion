@@ -1,5 +1,9 @@
 import type { Grok } from '@matt-usurp/grok';
 
+const InheritMarker = Symbol();
+const InheritInput = Symbol();
+const InheritOutput = Symbol();
+
 type KindForString<T extends string> = { readonly $kind: T; };
 export type Kind<T extends string, D> = D & KindForString<T>;
 export type KindConstraint = KindForString<string>;
@@ -30,8 +34,12 @@ export type Definition<
   readonly OutputOutbound: OutputOutbound;
 };
 
-export type LayerEnforceNextPassThrough = Kind<'next:passthtrough', {
-  $passthrough: symbol;
+export type LayerEnforceNextInputPassThrough = {
+  readonly [InheritMarker]: typeof InheritInput;
+};
+
+export type LayerEnforceNextOutputPassThrough = Kind<'layer:passthtrough', {
+  readonly [InheritMarker]: typeof InheritOutput;
 }>;
 
 export type LayerNextFunction<NewInput, Output> = (input: NewInput) => Output;
@@ -52,7 +60,7 @@ export type LayerFunction<
   CurrentOutput extends OutputKind,
   NewInput,
   NewOutput extends OutputKind,
-> = (input: CurrentInput, next: LayerNextFunction<NewInput, NewOutput>) => CurrentOutput;
+> = (input: CurrentInput & LayerEnforceNextInputPassThrough, next: LayerNextFunction<NewInput & LayerEnforceNextInputPassThrough, NewOutput>) => CurrentOutput;
 
 export type Layer<
   CurrentInput,
