@@ -1,8 +1,24 @@
 import type { Grok } from '@matt-usurp/grok';
 
-const InheritMarker = Symbol();
-const InheritInput = Symbol();
-const InheritOutput = Symbol();
+// --
+// -- Utilities
+// --
+
+/**
+ * A generic function with one {@link Input} and {@link Output}.
+ */
+type Fn<Input, Output> = (input: Input) => Output;
+
+/**
+ * A generic class with an invoke method of type {@link Fn}.
+ */
+type ClassLike<Fn> = {
+  invoke: Fn;
+};
+
+// --
+// -- Output
+// --
 
 /**
  * A typed output that can be used to transport data within the {@link Composer} instances.
@@ -32,17 +48,61 @@ export type OutputConstraint<T extends string = string> = Output<T, any>;
  */
 export const output = <T extends OutputConstraint>(type: T['type'], value: T['value']): T => ({ type, value } as T);
 
-export type BaseFunction<Input, Output> = (input: Input) => Output;
+// --
+// -- Terminus
+// --
 
-export type ComposerComposition<
+export type TerminusClass<
   GivenInput,
   GivenOutput extends OutputConstraint,
-> = {
-  readonly layers: Layer<GivenInput, GivenOutput, any, any>[];
+> = ClassLike<Fn<GivenInput, GivenOutput>>;
 
-  build: LayerBuilderFunction<GivenInput, GivenOutput>;
-  invoke: BaseFunction<GivenInput, GivenOutput>;
-};
+export type TerminusFunction<
+  GivenInput,
+  GivenOutput extends OutputConstraint,
+> = Fn<GivenInput, GivenOutput>;
+
+export type Terminus<
+  GivenInput,
+  GivenOutput extends OutputConstraint,
+> = (
+  | TerminusClass<GivenInput, GivenOutput>
+  | TerminusFunction<GivenInput, GivenOutput>
+);
+
+export type TerminusKind = Terminus<any, any>;
+
+export type MakeTerminusInput<T extends TerminusKind> = (
+  T extends Terminus<infer I, any>
+    ? (
+      Grok.If<
+        Grok.Value.IsAny<I>,
+        undefined,
+        I
+      >
+    )
+    : undefined
+);
+
+export type MakeTerminusOutput<T extends TerminusKind> = (
+  T extends Terminus<any, infer I>
+    ? (
+      Grok.If<
+        Grok.Value.IsAny<I>,
+        OutputConstraint,
+        I
+      >
+    )
+    : OutputConstraint
+);
+
+// --
+// -- Layer
+// --
+
+const InheritMarker = Symbol();
+const InheritInput = Symbol();
+const InheritOutput = Symbol();
 
 export type LayerEnforceNextInputPassThrough = {
   readonly [InheritMarker]: typeof InheritInput;
@@ -52,25 +112,19 @@ export type LayerEnforceNextOutputPassThrough = Output<'layer:passthtrough', {
   readonly [InheritMarker]: typeof InheritOutput;
 }>;
 
-export type LayerNextFunction<NewInput, Output> = (input: NewInput) => Output;
-
-type ClassVariant<T> = {
-  invoke: T;
-};
-
 export type LayerClass<
   CurrentInput,
   CurrentOutput extends OutputConstraint,
   NewInput,
   NewOutput extends OutputConstraint,
-> = ClassVariant<LayerFunction<CurrentInput, CurrentOutput, NewInput, NewOutput>>;
+> = ClassLike<LayerFunction<CurrentInput, CurrentOutput, NewInput, NewOutput>>;
 
 export type LayerFunction<
   CurrentInput,
   CurrentOutput extends OutputConstraint,
   NewInput,
   NewOutput extends OutputConstraint,
-> = (input: CurrentInput & LayerEnforceNextInputPassThrough, next: LayerNextFunction<NewInput & LayerEnforceNextInputPassThrough, NewOutput | LayerEnforceNextOutputPassThrough>) => CurrentOutput | LayerEnforceNextOutputPassThrough;
+> = (input: CurrentInput & LayerEnforceNextInputPassThrough, next: Fn<NewInput & LayerEnforceNextInputPassThrough, NewOutput | LayerEnforceNextOutputPassThrough>) => CurrentOutput | LayerEnforceNextOutputPassThrough;
 
 export type Layer<
   CurrentInput,
@@ -82,42 +136,7 @@ export type Layer<
   | LayerFunction<CurrentInput, CurrentOutput, NewInput, NewOutput>
 );
 
-export type TerminusClass<
-  GivenInput,
-  GivenOutput extends OutputConstraint,
-> = ClassVariant<BaseFunction<GivenInput, GivenOutput>>;
-
-export type TerminusFunction<
-  GivenInput,
-  GivenOutput extends OutputConstraint,
-> = BaseFunction<GivenInput, GivenOutput>;
-
-export type Terminus<
-  GivenInput,
-  GivenOutput extends OutputConstraint,
-> = (
-  | TerminusClass<GivenInput, GivenOutput>
-  | TerminusFunction<GivenInput, GivenOutput>
-);
-
 export type LayerKind = Layer<any, any, any, any>;
-export type TerminusKind = Terminus<any, any>;
-
-type ResolveCurrentInput<Current, Value> = (
-  Grok.If<
-    Grok.Value.IsAny<Value>,
-    Current,
-    Grok.Merge<Current, Value>
-  >
-);
-
-type ResolveCurrentOutput<Current, Value> = (
-  Grok.If<
-    Grok.Value.IsAny<Value>,
-    Current,
-    Grok.Union<Current, Value>
-  >
-);
 
 export type MakeLayerInput<T extends LayerKind> = (
   T extends Layer<infer I, any, any, any>
@@ -144,7 +163,7 @@ export type MakeLayerOutput<T extends LayerKind> = (
 );
 
 export type MakeLayerNext<T extends LayerKind> = (
-  LayerNextFunction<
+  Fn<
     (
       T extends Layer<any, any, infer I, any>
         ? (
@@ -170,31 +189,49 @@ export type MakeLayerNext<T extends LayerKind> = (
   >
 );
 
-export type MakeTerminusInput<T extends TerminusKind> = (
-  T extends Terminus<infer I, any>
-    ? (
-      Grok.If<
-        Grok.Value.IsAny<I>,
-        undefined,
-        I
-      >
-    )
-    : undefined
-);
+// --
+// -- Composition
+// --
 
-export type MakeTerminusOutput<T extends TerminusKind> = (
-  T extends Terminus<any, infer I>
-    ? (
-      Grok.If<
-        Grok.Value.IsAny<I>,
-        OutputConstraint,
-        I
-      >
-    )
-    : OutputConstraint
-);
+type LayerBuilderPassThrough = Fn<any, any>;
 
-export type ComposerKind = Composer<any, any, any, any>;
+type LayerInstrument = (thing: LayerKind | TerminusKind, next: Fn<any, any>) => Fn<any, any>;
+type LayerBuilderFunction<I, O> = (instrument?: LayerInstrument) => Fn<I, O>;
+
+export type ComposerComposition<
+  GivenInput,
+  GivenOutput extends OutputConstraint,
+> = {
+  readonly layers: LayerKind[];
+  readonly build: LayerBuilderFunction<GivenInput, GivenOutput>;
+  readonly invoke: Fn<GivenInput, GivenOutput>;
+};
+
+export const extractInvokableLayer = <
+  T extends Layer<A, B, C, D>,
+  A = T extends Layer<infer I, any, any, any> ? I : never,
+  B extends OutputConstraint = T extends Layer<any, infer I, any, any> ? I : never,
+  C = T extends Layer<any, any, infer I, any> ? I : never,
+  D extends OutputConstraint = T extends Layer<any, any, any, infer I> ? I : never,
+>(value: T): LayerFunction<A, B, C, D> => {
+  if ((value as LayerClass<A, B, C, D>).invoke !== undefined) {
+    return (value as LayerClass<A, B, C, D>).invoke;
+  }
+
+  return value as LayerFunction<A, B, C, D>;
+};
+
+export const extractInvokableTerminus = <
+  T extends Terminus<A, B>,
+  A = T extends Terminus<infer I, any> ? I : never,
+  B extends OutputConstraint = T extends Terminus<any, infer I> ? I : never,
+>(value: T): TerminusFunction<A, B> => {
+  if ((value as TerminusClass<A, B>).invoke !== undefined) {
+    return (value as TerminusClass<A, B>).invoke;
+  }
+
+  return value as TerminusFunction<A, B>;
+};
 
 export class Composer<
   CurrentInput,
@@ -204,19 +241,26 @@ export class Composer<
 > {
   protected readonly layers: Layer<any, any, any, any>[] = [];
 
-  public static create<InitialInput, InitialOutput extends OutputConstraint>(): Composer<InitialInput, InitialOutput, InitialInput, InitialOutput> {
+  /**
+   * Create an instance of {@link Composer} with {@link InitialInput} and {@link InitialOutput}.
+   */
+  public static create<
+    InitialInput,
+    InitialOutput extends OutputConstraint,
+  >(): Composer<InitialInput, InitialOutput, InitialInput, InitialOutput> {
     return new this();
   }
 
+  /**
+   * Protected constructor to enforce usage of {@link create()}.
+   */
   protected constructor() { }
 
+  /**
+   * Make use of the {@link GivenLayer}.
+   */
   public use<
-    GivenLayer extends Layer<
-      /* CurrentInput */ GivenInput,
-      /* CurrentOutput */ GivenOutput,
-      /* NewInput */ any,
-      /* NewOutput */ any // CurrentOutput | LayerEnforceNextPassThrough
-    >,
+    GivenLayer extends Layer<GivenInput, GivenOutput, any, any>,
     GivenInput extends CurrentInput,
     GivenOutput extends CurrentOutput | LayerEnforceNextOutputPassThrough,
   >(Layer: GivenLayer): (
@@ -252,11 +296,14 @@ export class Composer<
     return this as any;
   }
 
+  /**
+   * Terminate the composition with the {@link GivenTerminus}.
+   */
   public end<
-    T extends Terminus<GivenInput, GivenOutput>,
+    GivenTerminus extends Terminus<GivenInput, GivenOutput>,
     GivenInput extends CurrentInput,
     GivenOutput extends CurrentOutput,
-  >(terminus: T): ComposerComposition<InitialInput, InitialOutput> {
+  >(terminus: GivenTerminus): ComposerComposition<InitialInput, InitialOutput> {
     const terminusInvokable = extractInvokableTerminus(terminus as any);
 
     const build: LayerBuilderFunction<InitialInput, InitialOutput> = (instrument) => {
@@ -288,33 +335,4 @@ export class Composer<
   }
 }
 
-export const extractInvokableLayer = <
-  T extends Layer<A, B, C, D>,
-  A = T extends Layer<infer I, any, any, any> ? I : never,
-  B extends OutputConstraint = T extends Layer<any, infer I, any, any> ? I : never,
-  C = T extends Layer<any, any, infer I, any> ? I : never,
-  D extends OutputConstraint = T extends Layer<any, any, any, infer I> ? I : never,
->(value: T): LayerFunction<A, B, C, D> => {
-  if ((value as LayerClass<A, B, C, D>).invoke !== undefined) {
-    return (value as LayerClass<A, B, C, D>).invoke;
-  }
-
-  return value as LayerFunction<A, B, C, D>;
-};
-
-export const extractInvokableTerminus = <
-  T extends Terminus<A, B>,
-  A = T extends Terminus<infer I, any> ? I : never,
-  B extends OutputConstraint = T extends Terminus<any, infer I> ? I : never,
->(value: T): TerminusFunction<A, B> => {
-  if ((value as TerminusClass<A, B>).invoke !== undefined) {
-    return (value as TerminusClass<A, B>).invoke;
-  }
-
-  return value as TerminusFunction<A, B>;
-};
-
-type LayerBuilderPassThrough = BaseFunction<any, any>;
-
-type LayerInstrument = (thing: LayerKind | TerminusKind, next: BaseFunction<any, any>) => BaseFunction<any, any>;
-type LayerBuilderFunction<I, O> = (instrument?: LayerInstrument) => BaseFunction<I, O>;
+export type ComposerKind = Composer<any, any, any, any>;
