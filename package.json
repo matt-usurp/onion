@@ -1,5 +1,6 @@
 {
   "version": "0.0.0-dev",
+  "type": "commonjs",
   "name": "@matt-usurp/onion",
   "description": "A type-first function composer with onion middleware",
   "engines": {
@@ -8,6 +9,9 @@
   },
   "scripts": {
     "prepare": "husky install"
+  },
+  "dependencies": {
+    "@matt-usurp/grok": "^1.1.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.4.4",
@@ -19,8 +23,5 @@
     "husky": "^8.0.3",
     "typescript": "^5.1.6",
     "vitest": "^0.34.1"
-  },
-  "dependencies": {
-    "@matt-usurp/grok": "^1.1.0"
   }
 }

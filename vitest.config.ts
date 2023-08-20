@@ -6,6 +6,7 @@ export default configure({
     environment: 'node',
 
     include: [
+      'examples/**/*.test.{ts,tsx}',
       'src/**/*.test.{ts,tsx}',
     ],
 

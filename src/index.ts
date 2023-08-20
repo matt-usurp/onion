@@ -22,18 +22,6 @@ export type ComposerComposition<
   invoke: BaseFunction<GivenInput, GivenOutput>;
 };
 
-export type Definition<
-  InputInbound,
-  InputOutbound extends OutputKind,
-  OutputInbound,
-  OutputOutbound extends OutputKind,
-> = {
-  readonly InputInbound: InputInbound;
-  readonly InputOutbound: InputOutbound;
-  readonly OutputInbound: OutputInbound;
-  readonly OutputOutbound: OutputOutbound;
-};
-
 export type LayerEnforceNextInputPassThrough = {
   readonly [InheritMarker]: typeof InheritInput;
 };
@@ -60,7 +48,7 @@ export type LayerFunction<
   CurrentOutput extends OutputKind,
   NewInput,
   NewOutput extends OutputKind,
-> = (input: CurrentInput & LayerEnforceNextInputPassThrough, next: LayerNextFunction<NewInput & LayerEnforceNextInputPassThrough, NewOutput>) => CurrentOutput;
+> = (input: CurrentInput & LayerEnforceNextInputPassThrough, next: LayerNextFunction<NewInput & LayerEnforceNextInputPassThrough, NewOutput | LayerEnforceNextOutputPassThrough>) => CurrentOutput | LayerEnforceNextOutputPassThrough;
 
 export type Layer<
   CurrentInput,
@@ -109,28 +97,80 @@ type ResolveCurrentOutput<Current, Value> = (
   >
 );
 
-export type ComposerWithLayer<
-  CurrentInput,
-  CurrentOutput extends OutputKind,
-  InitialInput,
-  InitialOutput extends OutputKind,
-  GivenLayer extends LayerKind,
-> = (
-    Composer<
-      (
-        GivenLayer extends Layer<any, any, infer I, any>
-        ? ResolveCurrentInput<CurrentInput, I>
-        : 'Error:CannotInferGivenLayer'
-      ),
-      (
-        GivenLayer extends Layer<any, any, any, infer I>
-        ? ResolveCurrentOutput<CurrentOutput, I>
-        : 'Error:CannotInferGivenLayer'
-      ),
-      InitialInput,
-      InitialOutput
-    >
-  );
+export type MakeLayerInput<T extends LayerKind> = (
+  T extends Layer<infer I, any, any, any>
+    ? (
+      Grok.If<
+        Grok.Value.IsAny<I>,
+        LayerEnforceNextInputPassThrough,
+        I & LayerEnforceNextInputPassThrough
+      >
+    )
+    : LayerEnforceNextInputPassThrough
+);
+
+export type MakeLayerOutput<T extends LayerKind> = (
+  T extends Layer<any, infer I, any, any>
+    ? (
+      Grok.If<
+        Grok.Value.IsAny<I>,
+        LayerEnforceNextOutputPassThrough,
+        I | LayerEnforceNextOutputPassThrough
+      >
+    )
+    : LayerEnforceNextOutputPassThrough
+);
+
+export type MakeLayerNext<T extends LayerKind> = (
+  LayerNextFunction<
+    (
+      T extends Layer<any, any, infer I, any>
+        ? (
+          Grok.If<
+            Grok.Value.IsAny<I>,
+            LayerEnforceNextInputPassThrough,
+            I & LayerEnforceNextInputPassThrough
+          >
+        )
+        : LayerEnforceNextInputPassThrough
+    ),
+    (
+      T extends Layer<any, any, any, infer I>
+        ? (
+          Grok.If<
+            Grok.Value.IsAny<I>,
+            LayerEnforceNextOutputPassThrough,
+            I | LayerEnforceNextOutputPassThrough
+          >
+        )
+        : LayerEnforceNextOutputPassThrough
+    )
+  >
+);
+
+export type MakeTerminusInput<T extends TerminusKind> = (
+  T extends Terminus<infer I, any>
+    ? (
+      Grok.If<
+        Grok.Value.IsAny<I>,
+        undefined,
+        I
+      >
+    )
+    : undefined
+);
+
+export type MakeTerminusOutput<T extends TerminusKind> = (
+  T extends Terminus<any, infer I>
+    ? (
+      Grok.If<
+        Grok.Value.IsAny<I>,
+        OutputKind,
+        I
+      >
+    )
+    : OutputKind
+);
 
 export type ComposerKind = Composer<any, any, any, any>;
 
@@ -156,17 +196,29 @@ export class Composer<
       /* NewOutput */ any // CurrentOutput | LayerEnforceNextPassThrough
     >,
     GivenInput extends CurrentInput,
-    GivenOutput extends CurrentOutput,
+    GivenOutput extends CurrentOutput | LayerEnforceNextOutputPassThrough,
   >(Layer: GivenLayer): (
       Composer<
         (
           GivenLayer extends Layer<any, any, infer I, any>
-          ? ResolveCurrentInput<CurrentInput, I>
+          ? (
+            Grok.If<
+              Grok.Value.IsAny<I>,
+              CurrentInput,
+              Grok.Merge<CurrentInput, I>
+            >
+          )
           : 'Error:CannotInferGivenLayer'
         ),
         (
           GivenLayer extends Layer<any, any, any, infer I>
-          ? ResolveCurrentOutput<CurrentOutput, I>
+          ? (
+            Grok.If<
+              Grok.Value.IsAny<I>,
+              Exclude<CurrentOutput, LayerEnforceNextOutputPassThrough>,
+              Grok.Union<CurrentOutput, Exclude<I, LayerEnforceNextOutputPassThrough>>
+            >
+          )
           : 'Error:CannotInferGivenLayer'
         ),
         InitialInput,
