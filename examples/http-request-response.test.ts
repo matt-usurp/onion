@@ -1,10 +1,10 @@
-import { Composer, Kind, LayerClass, MakeLayerInput, MakeLayerNext, MakeLayerOutput, MakeTerminusInput, MakeTerminusOutput, TerminusClass } from '../src/index';
+import { Composer, LayerClass, MakeLayerInput, MakeLayerNext, MakeLayerOutput, MakeTerminusInput, MakeTerminusOutput, Output, TerminusClass } from '../src/index';
 
 type TestRequest = {
   readonly body: string;
 };
 
-type TestResponse = Kind<'http', {
+type TestResponse = Output<'http', {
   readonly status: number;
   readonly body: string;
 }>;
@@ -13,7 +13,7 @@ type TestRequestDecoded<T> = {
   readonly decoded: T;
 };
 
-type TestResponseDecoded<T> = Kind<'http:decoded', {
+type TestResponseDecoded<T> = Output<'http:decoded', {
   readonly status: number;
   readonly body: T;
 }>;
@@ -36,11 +36,13 @@ class TestDecodeResponse<T> implements TestDecodeResponseLayer<T> {
   public invoke(input: MakeLayerInput<TestDecodeResponseLayer<T>>, next: MakeLayerNext<TestDecodeResponseLayer<T>>): MakeLayerOutput<TestDecodeResponseLayer<T>> {
     const response = next(input);
 
-    if (response.$kind === 'http:decoded') {
+    if (response.type === 'http:decoded') {
       return {
-        $kind: 'http',
-        status: response.status,
-        body: JSON.stringify(response.body),
+        type: 'http',
+        value: {
+          status: response.value.status,
+          body: JSON.stringify(response.value.body),
+        },
       }
     }
 
@@ -62,10 +64,12 @@ type TestRequestHandlerTerminus = TerminusClass<TestRequestDecoded<TestRequestDa
 class TestRequestHandler implements TestRequestHandlerTerminus {
   public invoke(input: MakeTerminusInput<TestRequestHandlerTerminus>): MakeTerminusOutput<TestRequestHandlerTerminus> {
     return {
-      $kind: 'http:decoded',
-      status: 1,
-      body: {
-        sentence: `Hello ${input.decoded.name}, you are ${input.decoded.age} years old`,
+      type: 'http:decoded',
+      value: {
+        status: 1,
+        body: {
+          sentence: `Hello ${input.decoded.name}, you are ${input.decoded.age} years old`,
+        },
       },
     }
   };
@@ -86,11 +90,13 @@ describe('example, http-request-response', (): void => {
         })
       })
     ).toStrictEqual<TestResponse>({
-      $kind: 'http',
-      status: 1,
-      body: JSON.stringify({
-        sentence: 'Hello Jason, you are 28 years old',
-      }),
+      type: 'http',
+      value: {
+        status: 1,
+        body: JSON.stringify({
+          sentence: 'Hello Jason, you are 28 years old',
+        }),
+      },
     })
   });
 });

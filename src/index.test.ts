@@ -1,5 +1,5 @@
 import { MockedFunction, MockedObject } from 'vitest';
-import { Composer, ComposerKind, Kind, Layer, LayerClass, LayerFunction, OutputKind, Terminus, TerminusClass, TerminusFunction } from './index';
+import { Composer, ComposerKind, Layer, LayerClass, LayerFunction, Output, OutputConstraint, Terminus, TerminusClass, TerminusFunction, output } from './index';
 
 export type TestBaseInput = {
   readonly id: string;
@@ -7,21 +7,14 @@ export type TestBaseInput = {
   readonly random: number;
 };
 
-export type TestBaseOutput = Kind<'o:test:status', {
+export type TestBaseOutput = Output<'o:test:status', {
   readonly status: number;
 }>;
-
-const createOutput = <O extends OutputKind>(kind: O['$kind'], data: Omit<O, '$kind'>): O => {
-  return {
-    ...data,
-    $kind: kind,
-  } as O;
-};
 
 const createTerminusClassMock = <
   T extends Terminus<A, B>,
   A = T extends Terminus<infer I, any> ? I : never,
-  B extends OutputKind = T extends Terminus<any, infer I> ? I : never,
+  B extends OutputConstraint = T extends Terminus<any, infer I> ? I : never,
 >(): MockedObject<TerminusClass<A, B>> => {
   return {
     invoke: vi.fn(),
@@ -31,7 +24,7 @@ const createTerminusClassMock = <
 const createTerminusFunctionMock = <
   T extends Terminus<A, B>,
   A = T extends Terminus<infer I, any> ? I : never,
-  B extends OutputKind = T extends Terminus<any, infer I> ? I : never,
+  B extends OutputConstraint = T extends Terminus<any, infer I> ? I : never,
 >(): MockedFunction<TerminusFunction<A, B>> => {
   return vi.fn() as MockedFunction<TerminusFunction<A, B>>;
 };
@@ -39,9 +32,9 @@ const createTerminusFunctionMock = <
 const createLayerClassMock = <
   T extends Layer<A, B, C, D>,
   A = T extends Layer<infer I, any, any, any> ? I : never,
-  B extends OutputKind = T extends Layer<any, infer I, any, any> ? I : never,
+  B extends OutputConstraint = T extends Layer<any, infer I, any, any> ? I : never,
   C = T extends Layer<any, any, infer I, any> ? I : never,
-  D extends OutputKind = T extends Layer<any, any, any, infer I> ? I : never,
+  D extends OutputConstraint = T extends Layer<any, any, any, infer I> ? I : never,
 >(): MockedObject<LayerClass<A, B, C, D>> => {
   return {
     invoke: vi.fn(),
@@ -51,9 +44,9 @@ const createLayerClassMock = <
 const createLayerFunctionMock = <
   T extends Layer<A, B, C, D>,
   A = T extends Layer<infer I, any, any, any> ? I : never,
-  B extends OutputKind = T extends Layer<any, infer I, any, any> ? I : never,
+  B extends OutputConstraint = T extends Layer<any, infer I, any, any> ? I : never,
   C = T extends Layer<any, any, infer I, any> ? I : never,
-  D extends OutputKind = T extends Layer<any, any, any, infer I> ? I : never,
+  D extends OutputConstraint = T extends Layer<any, any, any, infer I> ? I : never,
 >(): MockedFunction<LayerFunction<A, B, C, D>> => {
   return vi.fn() as MockedFunction<LayerFunction<A, B, C, D>>;
 };
@@ -77,7 +70,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.invoke.mockReturnValueOnce(
-        createOutput('o:test:status', {
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -101,8 +94,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:status', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -130,7 +123,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.invoke.mockReturnValueOnce(
-        createOutput('o:test:status', {
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -164,8 +157,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:status', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -193,7 +186,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.invoke.mockReturnValueOnce(
-        createOutput('o:test:status', {
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -227,8 +220,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:status', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -260,7 +253,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.invoke.mockReturnValueOnce(
-        createOutput('o:test:status', {
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -294,8 +287,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:status', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -327,7 +320,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.invoke.mockReturnValueOnce(
-        createOutput('o:test:status', {
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -362,8 +355,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:status', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -374,7 +367,7 @@ describe(Composer.name, (): void => {
 
       // -- Layer
 
-      type NewOutputWithAuthentication = Kind<'o:test:authenticated', {
+      type NewOutputWithAuthentication = Output<'o:test:authenticated', {
         readonly authenticated: boolean;
       }>;
 
@@ -395,7 +388,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.invoke.mockReturnValueOnce(
-        createOutput('o:test:status', {
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -429,8 +422,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:status', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -462,7 +455,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusClassMock<Terminus<NewInputWithAuthentication, TestBaseOutput>>();
 
       terminus.invoke.mockReturnValueOnce(
-        createOutput('o:test:status', {
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -496,8 +489,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:status', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -508,7 +501,7 @@ describe(Composer.name, (): void => {
 
       // -- Layer
 
-      type NewOutputWithAuthentication = Kind<'o:test:authenticated', {
+      type NewOutputWithAuthentication = Output<'o:test:authenticated', {
         readonly authenticated: boolean;
       }>;
 
@@ -529,7 +522,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusClassMock<Terminus<TestBaseInput, NewOutputWithAuthentication>>();
 
       terminus.invoke.mockReturnValueOnce(
-        createOutput('o:test:authenticated', {
+        output('o:test:authenticated', {
           authenticated: false,
         })
       );
@@ -563,8 +556,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:authenticated', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:authenticated', {
           authenticated: false,
         })
       );
@@ -610,7 +603,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.invoke.mockReturnValueOnce(
-        createOutput('o:test:status', {
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -654,8 +647,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:status', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -666,7 +659,7 @@ describe(Composer.name, (): void => {
 
       // -- Layer
 
-      type NewOutputWithAuthentication = Kind<'o:test:authenticated', {
+      type NewOutputWithAuthentication = Output<'o:test:authenticated', {
         readonly authenticated: boolean;
       }>;
 
@@ -701,7 +694,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.invoke.mockReturnValueOnce(
-        createOutput('o:test:status', {
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -745,8 +738,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:status', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -765,7 +758,7 @@ describe(Composer.name, (): void => {
         const terminus = createTerminusClassMock<Terminus<ExpectInput, TestBaseOutput>>();
 
         terminus.invoke.mockReturnValueOnce(
-          createOutput('o:test:status', {
+          output('o:test:status', {
             status: 123,
           })
         );
@@ -792,8 +785,8 @@ describe(Composer.name, (): void => {
           random: 3,
         });
 
-        expect(result).toStrictEqual<OutputKind>(
-          createOutput('o:test:status', {
+        expect(result).toStrictEqual<OutputConstraint>(
+          output('o:test:status', {
             status: 123,
           })
         );
@@ -804,14 +797,14 @@ describe(Composer.name, (): void => {
 
         // -- Terminus
 
-        type NewOutputWithAuthentication = Kind<'o:test:authenticated', {
+        type NewOutputWithAuthentication = Output<'o:test:authenticated', {
           readonly authenticated: boolean;
         }>;
 
         const terminus = createTerminusClassMock<Terminus<TestBaseInput, NewOutputWithAuthentication>>();
 
         terminus.invoke.mockReturnValueOnce(
-          createOutput('o:test:authenticated', {
+          output('o:test:authenticated', {
             authenticated: false,
           })
         );
@@ -838,8 +831,8 @@ describe(Composer.name, (): void => {
           random: 3,
         });
 
-        expect(result).toStrictEqual<OutputKind>(
-          createOutput('o:test:authenticated', {
+        expect(result).toStrictEqual<OutputConstraint>(
+          output('o:test:authenticated', {
             authenticated: false,
           })
         );
@@ -870,7 +863,7 @@ describe(Composer.name, (): void => {
         const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
         terminus.invoke.mockReturnValueOnce(
-          createOutput('o:test:status', {
+          output('o:test:status', {
             status: 123,
           })
         );
@@ -904,8 +897,8 @@ describe(Composer.name, (): void => {
           random: 3,
         });
 
-        expect(result).toStrictEqual<OutputKind>(
-          createOutput('o:test:status', {
+        expect(result).toStrictEqual<OutputConstraint>(
+          output('o:test:status', {
             status: 123,
           })
         );
@@ -916,7 +909,7 @@ describe(Composer.name, (): void => {
 
         // -- Layer
 
-        type NewOutputWithAuthentication = Kind<'o:test:authenticated', {
+        type NewOutputWithAuthentication = Output<'o:test:authenticated', {
           readonly authenticated: boolean;
         }>;
 
@@ -936,7 +929,7 @@ describe(Composer.name, (): void => {
         const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
         terminus.invoke.mockReturnValueOnce(
-          createOutput('o:test:status', {
+          output('o:test:status', {
             status: 123,
           })
         );
@@ -970,8 +963,8 @@ describe(Composer.name, (): void => {
           random: 3,
         });
 
-        expect(result).toStrictEqual<OutputKind>(
-          createOutput('o:test:status', {
+        expect(result).toStrictEqual<OutputConstraint>(
+          output('o:test:status', {
             status: 123,
           })
         );
@@ -991,7 +984,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.mockReturnValueOnce(
-        createOutput('o:test:status', {
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -1015,8 +1008,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:status', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -1044,7 +1037,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.mockReturnValueOnce(
-        createOutput('o:test:status', {
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -1078,8 +1071,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:status', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -1107,7 +1100,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.mockReturnValueOnce(
-        createOutput('o:test:status', {
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -1141,8 +1134,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:status', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -1174,7 +1167,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.mockReturnValueOnce(
-        createOutput('o:test:status', {
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -1208,8 +1201,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:status', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -1241,7 +1234,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.mockReturnValueOnce(
-        createOutput('o:test:status', {
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -1276,8 +1269,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:status', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -1288,7 +1281,7 @@ describe(Composer.name, (): void => {
 
       // -- Layer
 
-      type NewOutputWithAuthentication = Kind<'o:test:authenticated', {
+      type NewOutputWithAuthentication = Output<'o:test:authenticated', {
         readonly authenticated: boolean;
       }>;
 
@@ -1309,7 +1302,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.mockReturnValueOnce(
-        createOutput('o:test:status', {
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -1343,8 +1336,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:status', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -1376,7 +1369,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusFunctionMock<Terminus<NewInputWithAuthentication, TestBaseOutput>>();
 
       terminus.mockReturnValueOnce(
-        createOutput('o:test:status', {
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -1410,8 +1403,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:status', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -1422,7 +1415,7 @@ describe(Composer.name, (): void => {
 
       // -- Layer
 
-      type NewOutputWithAuthentication = Kind<'o:test:authenticated', {
+      type NewOutputWithAuthentication = Output<'o:test:authenticated', {
         readonly authenticated: boolean;
       }>;
 
@@ -1443,7 +1436,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, NewOutputWithAuthentication>>();
 
       terminus.mockReturnValueOnce(
-        createOutput('o:test:authenticated', {
+        output('o:test:authenticated', {
           authenticated: false,
         })
       );
@@ -1477,8 +1470,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:authenticated', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:authenticated', {
           authenticated: false,
         })
       );
@@ -1524,7 +1517,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.mockReturnValueOnce(
-        createOutput('o:test:status', {
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -1568,8 +1561,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:status', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -1580,7 +1573,7 @@ describe(Composer.name, (): void => {
 
       // -- Layer
 
-      type NewOutputWithAuthentication = Kind<'o:test:authenticated', {
+      type NewOutputWithAuthentication = Output<'o:test:authenticated', {
         readonly authenticated: boolean;
       }>;
 
@@ -1615,7 +1608,7 @@ describe(Composer.name, (): void => {
       const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
       terminus.mockReturnValueOnce(
-        createOutput('o:test:status', {
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -1659,8 +1652,8 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputKind>(
-        createOutput('o:test:status', {
+      expect(result).toStrictEqual<OutputConstraint>(
+        output('o:test:status', {
           status: 123,
         })
       );
@@ -1679,7 +1672,7 @@ describe(Composer.name, (): void => {
         const terminus = createTerminusFunctionMock<Terminus<ExpectInput, TestBaseOutput>>();
 
         terminus.mockReturnValueOnce(
-          createOutput('o:test:status', {
+          output('o:test:status', {
             status: 123,
           })
         );
@@ -1706,8 +1699,8 @@ describe(Composer.name, (): void => {
           random: 3,
         });
 
-        expect(result).toStrictEqual<OutputKind>(
-          createOutput('o:test:status', {
+        expect(result).toStrictEqual<OutputConstraint>(
+          output('o:test:status', {
             status: 123,
           })
         );
@@ -1718,14 +1711,14 @@ describe(Composer.name, (): void => {
 
         // -- Terminus
 
-        type NewOutputWithAuthentication = Kind<'o:test:authenticated', {
+        type NewOutputWithAuthentication = Output<'o:test:authenticated', {
           readonly authenticated: boolean;
         }>;
 
         const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, NewOutputWithAuthentication>>();
 
         terminus.mockReturnValueOnce(
-          createOutput('o:test:authenticated', {
+          output('o:test:authenticated', {
             authenticated: false,
           })
         );
@@ -1752,8 +1745,8 @@ describe(Composer.name, (): void => {
           random: 3,
         });
 
-        expect(result).toStrictEqual<OutputKind>(
-          createOutput('o:test:authenticated', {
+        expect(result).toStrictEqual<OutputConstraint>(
+          output('o:test:authenticated', {
             authenticated: false,
           })
         );
@@ -1784,7 +1777,7 @@ describe(Composer.name, (): void => {
         const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
         terminus.mockReturnValueOnce(
-          createOutput('o:test:status', {
+          output('o:test:status', {
             status: 123,
           })
         );
@@ -1818,8 +1811,8 @@ describe(Composer.name, (): void => {
           random: 3,
         });
 
-        expect(result).toStrictEqual<OutputKind>(
-          createOutput('o:test:status', {
+        expect(result).toStrictEqual<OutputConstraint>(
+          output('o:test:status', {
             status: 123,
           })
         );
@@ -1830,7 +1823,7 @@ describe(Composer.name, (): void => {
 
         // -- Layer
 
-        type NewOutputWithAuthentication = Kind<'o:test:authenticated', {
+        type NewOutputWithAuthentication = Output<'o:test:authenticated', {
           readonly authenticated: boolean;
         }>;
 
@@ -1850,7 +1843,7 @@ describe(Composer.name, (): void => {
         const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
         terminus.mockReturnValueOnce(
-          createOutput('o:test:status', {
+          output('o:test:status', {
             status: 123,
           })
         );
@@ -1884,8 +1877,8 @@ describe(Composer.name, (): void => {
           random: 3,
         });
 
-        expect(result).toStrictEqual<OutputKind>(
-          createOutput('o:test:status', {
+        expect(result).toStrictEqual<OutputConstraint>(
+          output('o:test:status', {
             status: 123,
           })
         );
