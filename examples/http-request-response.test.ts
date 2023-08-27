@@ -1,4 +1,7 @@
-import { Composer, LayerClass, MakeLayerInput, MakeLayerNext, MakeLayerOutput, MakeTerminusInput, MakeTerminusOutput, Output, TerminusClass } from '../src/index';
+import type { Layer, Output, Terminus } from '../src/index';
+import { Composer, output } from '../src/index';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
  * The initial request that would be given from the platform or server.
@@ -34,7 +37,7 @@ type TestRequestDecoded<T> = {
  * We make use of {@link LayerClass} to define an interface we can extend.
  * This is done to lessen the code duplication as we need this a few more times.
  */
-type TestDecodeRequestLayer<T> = LayerClass<TestInitialRequest, any, TestRequestDecoded<T>, any>;
+type TestDecodeRequestLayer<T> = Layer.Class<TestInitialRequest, any, TestRequestDecoded<T>, any>;
 
 /**
  * Our layer implementation.
@@ -44,15 +47,15 @@ class TestDecodeRequest<T> implements TestDecodeRequestLayer<T> {
    * {@inheritdoc}
    */
   public async invoke(
-    input: MakeLayerInput<TestDecodeRequestLayer<T>>,
-    next: MakeLayerNext<TestDecodeRequestLayer<T>>,
-  ): MakeLayerOutput<TestDecodeRequestLayer<T>> {
+    input: Layer.Input<TestDecodeRequestLayer<T>>,
+    next: Layer.Next<TestDecodeRequestLayer<T>>,
+  ): Layer.Output<TestDecodeRequestLayer<T>> {
     return next({
       ...input,
 
       decoded: JSON.parse(input.body) as T,
     });
-  };
+  }
 }
 
 // --
@@ -71,7 +74,7 @@ type TestResponseBetter<T> = Output<'http:decoded', {
 /**
  * Same as before, we define locally so we can reduce code duplication.
  */
-type TestBetterResponseLayer<T> = LayerClass<any, TestInitialResponse, any, TestResponseBetter<T>>;
+type TestBetterResponseLayer<T> = Layer.Class<any, TestInitialResponse, any, TestResponseBetter<T>>;
 
 /**
  * Our layer implementation.
@@ -81,23 +84,20 @@ class TestBetterResponse<T> implements TestBetterResponseLayer<T> {
    * {@inheritdoc}
    */
   public async invoke(
-    input: MakeLayerInput<TestBetterResponseLayer<T>>,
-    next: MakeLayerNext<TestBetterResponseLayer<T>>,
-  ): MakeLayerOutput<TestBetterResponseLayer<T>> {
+    input: Layer.Input<TestBetterResponseLayer<T>>,
+    next: Layer.Next<TestBetterResponseLayer<T>>,
+  ): Layer.Output<TestBetterResponseLayer<T>> {
     const response = await next(input);
 
     if (response.type === 'http:decoded') {
-      return {
-        type: 'http',
-        value: {
-          status: response.value.status,
-          body: JSON.stringify(response.value.body),
-        },
-      }
+      return output<TestInitialResponse>('http', {
+        status: response.value.status,
+        body: JSON.stringify(response.value.body),
+      });
     }
 
     return response;
-  };
+  }
 }
 
 // --
@@ -122,7 +122,7 @@ type TestResponseData = {
 /**
  * Same as previously, we define locally so we can reduce code duplication.
  */
-type TestRequestHandlerTerminus = TerminusClass<TestRequestDecoded<TestRequestData>, TestResponseBetter<TestResponseData>>;
+type TestRequestHandlerTerminus = Terminus.Class<TestRequestDecoded<TestRequestData>, TestResponseBetter<TestResponseData>>;
 
 /**
  * Our terminus implementation.
@@ -131,17 +131,15 @@ class TestRequestHandler implements TestRequestHandlerTerminus {
   /**
    * {@inheritdoc}
    */
-  public async invoke(input: MakeTerminusInput<TestRequestHandlerTerminus>): MakeTerminusOutput<TestRequestHandlerTerminus> {
-    return {
-      type: 'http:decoded',
-      value: {
-        status: 1,
-        body: {
-          sentence: `Hello ${input.decoded.name}, you are ${input.decoded.age} years old`,
-        },
+  public async invoke(input: Terminus.Input<TestRequestHandlerTerminus>): Terminus.Output<TestRequestHandlerTerminus> {
+    return output<TestResponseBetter<TestResponseData>>('http:decoded', {
+      status: 1,
+
+      body: {
+        sentence: `Hello ${input.decoded.name}, you are ${input.decoded.age} years old`,
       },
-    }
-  };
+    });
+  }
 }
 
 // --
@@ -160,8 +158,8 @@ describe('example, http-request-response', (): void => {
         body: JSON.stringify({
           name: 'Jason',
           age: 28,
-        })
-      })
+        }),
+      }),
     ).toStrictEqual<TestInitialResponse>({
       type: 'http',
       value: {
@@ -170,6 +168,6 @@ describe('example, http-request-response', (): void => {
           sentence: 'Hello Jason, you are 28 years old',
         }),
       },
-    })
+    });
   });
 });

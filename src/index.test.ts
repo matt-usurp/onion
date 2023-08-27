@@ -1,5 +1,9 @@
-import { MockedFunction, MockedObject } from 'vitest';
-import { Composer, ComposerKind, Layer, LayerClass, LayerFunction, Output, OutputConstraint, Terminus, TerminusClass, TerminusFunction, output } from './index';
+import type { MockedFunction, MockedObject } from 'vitest';
+import type { ComposerConstraint, Layer, Output, OutputConstraint, Terminus } from './index';
+import { Composer, output } from './index';
+
+/* eslint-disable @typescript-eslint/ban-types */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export type TestBaseInput = {
   readonly id: string;
@@ -12,50 +16,62 @@ export type TestBaseOutput = Output<'o:test:status', {
 }>;
 
 const createTerminusClassMock = <
-  T extends Terminus<A, B>,
-  A = T extends Terminus<infer I, any> ? I : never,
-  B extends OutputConstraint = T extends Terminus<any, infer I> ? I : never,
->(): MockedObject<TerminusClass<A, B>> => {
+  GivenTerminus extends Terminus<GivenInput, GivenOutput>,
+  GivenInput = GivenTerminus extends Terminus<infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  GivenOutput extends OutputConstraint = GivenTerminus extends Terminus<any, infer I> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+>(): MockedObject<Terminus.Class<GivenInput, GivenOutput>> => {
   return {
     invoke: vi.fn(),
-  } as unknown as MockedObject<TerminusClass<A, B>>;
+  } as unknown as MockedObject<Terminus.Class<GivenInput, GivenOutput>>;
 };
 
 const createTerminusFunctionMock = <
-  T extends Terminus<A, B>,
-  A = T extends Terminus<infer I, any> ? I : never,
-  B extends OutputConstraint = T extends Terminus<any, infer I> ? I : never,
->(): MockedFunction<TerminusFunction<A, B>> => {
-  return vi.fn() as MockedFunction<TerminusFunction<A, B>>;
+  GivenTerminus extends Terminus<GivenInput, GivenOutput>,
+  GivenInput = GivenTerminus extends Terminus<infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  GivenOutput extends OutputConstraint = GivenTerminus extends Terminus<any, infer I> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+>(): MockedFunction<Terminus.Fn<GivenInput, GivenOutput>> => {
+  return vi.fn() as MockedFunction<Terminus.Fn<GivenInput, GivenOutput>>;
 };
 
 const createLayerClassMock = <
-  T extends Layer<A, B, C, D>,
-  A = T extends Layer<infer I, any, any, any> ? I : never,
-  B extends OutputConstraint = T extends Layer<any, infer I, any, any> ? I : never,
-  C = T extends Layer<any, any, infer I, any> ? I : never,
-  D extends OutputConstraint = T extends Layer<any, any, any, infer I> ? I : never,
->(): MockedObject<LayerClass<A, B, C, D>> => {
+  GivenLayer extends Layer<CurrentInput, CurrentOutput, NewInput, NewOutput>,
+  CurrentInput = GivenLayer extends Layer<infer I, any, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  CurrentOutput extends OutputConstraint = GivenLayer extends Layer<any, infer I, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  NewInput = GivenLayer extends Layer<any, any, infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  NewOutput extends OutputConstraint = GivenLayer extends Layer<any, any, any, infer I> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+>(): MockedObject<Layer.Class<CurrentInput, CurrentOutput, NewInput, NewOutput>> => {
   return {
     invoke: vi.fn(),
-  } as unknown as MockedObject<LayerClass<A, B, C, D>>;
+  } as unknown as MockedObject<Layer.Class<CurrentInput, CurrentOutput, NewInput, NewOutput>>;
 };
 
 const createLayerFunctionMock = <
-  T extends Layer<A, B, C, D>,
-  A = T extends Layer<infer I, any, any, any> ? I : never,
-  B extends OutputConstraint = T extends Layer<any, infer I, any, any> ? I : never,
-  C = T extends Layer<any, any, infer I, any> ? I : never,
-  D extends OutputConstraint = T extends Layer<any, any, any, infer I> ? I : never,
->(): MockedFunction<LayerFunction<A, B, C, D>> => {
-  return vi.fn() as MockedFunction<LayerFunction<A, B, C, D>>;
+  GivenLayer extends Layer<CurrentInput, CurrentOutput, NewInput, NewOutput>,
+  CurrentInput = GivenLayer extends Layer<infer I, any, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  CurrentOutput extends OutputConstraint = GivenLayer extends Layer<any, infer I, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  NewInput = GivenLayer extends Layer<any, any, infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  NewOutput extends OutputConstraint = GivenLayer extends Layer<any, any, any, infer I> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+>(): MockedFunction<Layer.Fn<CurrentInput, CurrentOutput, NewInput, NewOutput>> => {
+  return vi.fn() as MockedFunction<Layer.Fn<CurrentInput, CurrentOutput, NewInput, NewOutput>>;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const assertInputType = <T, X extends T>() => { };
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const assertOutputType = <T extends X, X>() => { };
 
-type InferComposerCurrentInput<T extends ComposerKind> = T extends Composer<infer I, any, any, any> ? I : never;
-type InferComposerCurrentOutput<T extends ComposerKind> = T extends Composer<any, infer I, any, any> ? I : never;
+type InferComposerCurrentInput<T extends ComposerConstraint> = (
+  T extends Composer<infer I, any, any, any> // eslint-disable-line @typescript-eslint/no-explicit-any
+    ? I
+    : never
+);
+
+type InferComposerCurrentOutput<T extends ComposerConstraint> = (
+  T extends Composer<any, infer I, any, any> // eslint-disable-line @typescript-eslint/no-explicit-any
+    ? I
+    : never
+);
 
 describe(Composer.name, (): void => {
   describe('using class style', (): void => {
@@ -72,7 +88,7 @@ describe(Composer.name, (): void => {
       terminus.invoke.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
 
       const composition = composer1.end(terminus);
@@ -97,7 +113,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
     });
 
@@ -108,7 +124,7 @@ describe(Composer.name, (): void => {
 
       const layer1 = createLayerClassMock<Layer<any, any, any, any>>();
 
-      layer1.invoke.mockImplementationOnce((input, next) => {
+      layer1.invoke.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -125,7 +141,7 @@ describe(Composer.name, (): void => {
       terminus.invoke.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
 
       const composition = composer2.end(terminus);
@@ -160,7 +176,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
     });
 
@@ -171,7 +187,7 @@ describe(Composer.name, (): void => {
 
       const layer1 = createLayerClassMock<Layer<TestBaseInput, any, any, any>>();
 
-      layer1.invoke.mockImplementationOnce((input, next) => {
+      layer1.invoke.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -188,7 +204,7 @@ describe(Composer.name, (): void => {
       terminus.invoke.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
 
       const composition = composer2.end(terminus);
@@ -223,7 +239,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
     });
 
@@ -238,7 +254,7 @@ describe(Composer.name, (): void => {
 
       const layer1 = createLayerClassMock<Layer<layerCurrentSubsetInput, any, any, any>>();
 
-      layer1.invoke.mockImplementationOnce((input, next) => {
+      layer1.invoke.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -255,7 +271,7 @@ describe(Composer.name, (): void => {
       terminus.invoke.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
 
       const composition = composer2.end(terminus);
@@ -290,7 +306,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
     });
 
@@ -305,7 +321,7 @@ describe(Composer.name, (): void => {
 
       const layer1 = createLayerClassMock<Layer<any, any, NewInputWithAuthentication, any>>();
 
-      layer1.invoke.mockImplementationOnce((input, next) => {
+      layer1.invoke.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -322,7 +338,7 @@ describe(Composer.name, (): void => {
       terminus.invoke.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
 
       const composition = composer2.end(terminus);
@@ -358,7 +374,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
     });
 
@@ -390,7 +406,7 @@ describe(Composer.name, (): void => {
       terminus.invoke.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
 
       const composition = composer2.end(terminus);
@@ -425,7 +441,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
     });
 
@@ -440,7 +456,7 @@ describe(Composer.name, (): void => {
 
       const layer1 = createLayerClassMock<Layer<any, any, NewInputWithAuthentication, any>>();
 
-      layer1.invoke.mockImplementationOnce((input, next) => {
+      layer1.invoke.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -457,7 +473,7 @@ describe(Composer.name, (): void => {
       terminus.invoke.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
 
       const composition = composer2.end(terminus);
@@ -492,7 +508,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
     });
 
@@ -524,7 +540,7 @@ describe(Composer.name, (): void => {
       terminus.invoke.mockResolvedValueOnce(
         output('o:test:authenticated', {
           authenticated: false,
-        })
+        }),
       );
 
       const composition = composer2.end(terminus);
@@ -559,7 +575,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:authenticated', {
           authenticated: false,
-        })
+        }),
       );
     });
 
@@ -574,7 +590,7 @@ describe(Composer.name, (): void => {
 
       const layer1 = createLayerClassMock<Layer<any, any, NewInputWithAuthentication, any>>();
 
-      layer1.invoke.mockImplementationOnce((input, next) => {
+      layer1.invoke.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -588,7 +604,7 @@ describe(Composer.name, (): void => {
 
       const layer2 = createLayerClassMock<Layer<NewInputWithAuthentication, any, any, any>>();
 
-      layer2.invoke.mockImplementationOnce((input, next) => {
+      layer2.invoke.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -605,7 +621,7 @@ describe(Composer.name, (): void => {
       terminus.invoke.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
 
       const composition = composer3.end(terminus);
@@ -650,7 +666,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
     });
 
@@ -679,7 +695,7 @@ describe(Composer.name, (): void => {
 
       const layer2 = createLayerClassMock<Layer<any, NewOutputWithAuthentication, any, any>>();
 
-      layer2.invoke.mockImplementationOnce((input, next) => {
+      layer2.invoke.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -696,7 +712,7 @@ describe(Composer.name, (): void => {
       terminus.invoke.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
 
       const composition = composer3.end(terminus);
@@ -741,7 +757,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
     });
 
@@ -760,12 +776,12 @@ describe(Composer.name, (): void => {
         terminus.invoke.mockResolvedValueOnce(
           output('o:test:status', {
             status: 123,
-          })
+          }),
         );
 
         const composition = composer1.end(
           // @ts-expect-error missing expected property "authenticated"
-          terminus
+          terminus,
         );
 
         // -- Result
@@ -788,7 +804,7 @@ describe(Composer.name, (): void => {
         expect(result).toStrictEqual<OutputConstraint>(
           output('o:test:status', {
             status: 123,
-          })
+          }),
         );
       });
 
@@ -806,12 +822,12 @@ describe(Composer.name, (): void => {
         terminus.invoke.mockResolvedValueOnce(
           output('o:test:authenticated', {
             authenticated: false,
-          })
+          }),
         );
 
         const composition = composer1.end(
           // @ts-expect-error expected response is not in current output union
-          terminus
+          terminus,
         );
 
         // -- Result
@@ -834,7 +850,7 @@ describe(Composer.name, (): void => {
         expect(result).toStrictEqual<OutputConstraint>(
           output('o:test:authenticated', {
             authenticated: false,
-          })
+          }),
         );
       });
 
@@ -849,13 +865,13 @@ describe(Composer.name, (): void => {
 
         const layer1 = createLayerClassMock<Layer<NewOutputWithAuthentication, any, any, any>>();
 
-        layer1.invoke.mockImplementationOnce((input, next) => {
-        return next(input);
-      });
+        layer1.invoke.mockImplementationOnce(async (input, next) => {
+          return next(input);
+        });
 
         const composer2 = composer1.use(
           // @ts-expect-error missing expected property "authenticated"
-          layer1
+          layer1,
         );
 
         // -- Terminus
@@ -865,7 +881,7 @@ describe(Composer.name, (): void => {
         terminus.invoke.mockResolvedValueOnce(
           output('o:test:status', {
             status: 123,
-          })
+          }),
         );
 
         const composition = composer2.end(terminus);
@@ -900,7 +916,7 @@ describe(Composer.name, (): void => {
         expect(result).toStrictEqual<OutputConstraint>(
           output('o:test:status', {
             status: 123,
-          })
+          }),
         );
       });
 
@@ -915,13 +931,13 @@ describe(Composer.name, (): void => {
 
         const layer1 = createLayerClassMock<Layer<any, NewOutputWithAuthentication, any, any>>();
 
-        layer1.invoke.mockImplementationOnce((input, next) => {
-        return next(input);
-      });
+        layer1.invoke.mockImplementationOnce(async (input, next) => {
+          return next(input);
+        });
 
         const composer2 = composer1.use(
           // @ts-expect-error response is not in current output union
-          layer1
+          layer1,
         );
 
         // -- Terminus
@@ -931,7 +947,7 @@ describe(Composer.name, (): void => {
         terminus.invoke.mockResolvedValueOnce(
           output('o:test:status', {
             status: 123,
-          })
+          }),
         );
 
         const composition = composer2.end(terminus);
@@ -966,7 +982,7 @@ describe(Composer.name, (): void => {
         expect(result).toStrictEqual<OutputConstraint>(
           output('o:test:status', {
             status: 123,
-          })
+          }),
         );
       });
     });
@@ -986,7 +1002,7 @@ describe(Composer.name, (): void => {
       terminus.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
 
       const composition = composer1.end(terminus);
@@ -1011,7 +1027,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
     });
 
@@ -1022,7 +1038,7 @@ describe(Composer.name, (): void => {
 
       const layer1 = createLayerFunctionMock<Layer<any, any, any, any>>();
 
-      layer1.mockImplementationOnce((input, next) => {
+      layer1.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -1039,7 +1055,7 @@ describe(Composer.name, (): void => {
       terminus.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
 
       const composition = composer2.end(terminus);
@@ -1074,7 +1090,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
     });
 
@@ -1085,7 +1101,7 @@ describe(Composer.name, (): void => {
 
       const layer1 = createLayerFunctionMock<Layer<TestBaseInput, any, any, any>>();
 
-      layer1.mockImplementationOnce((input, next) => {
+      layer1.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -1102,7 +1118,7 @@ describe(Composer.name, (): void => {
       terminus.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
 
       const composition = composer2.end(terminus);
@@ -1137,7 +1153,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
     });
 
@@ -1152,7 +1168,7 @@ describe(Composer.name, (): void => {
 
       const layer1 = createLayerFunctionMock<Layer<layerCurrentSubsetInput, any, any, any>>();
 
-      layer1.mockImplementationOnce((input, next) => {
+      layer1.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -1169,7 +1185,7 @@ describe(Composer.name, (): void => {
       terminus.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
 
       const composition = composer2.end(terminus);
@@ -1204,7 +1220,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
     });
 
@@ -1219,7 +1235,7 @@ describe(Composer.name, (): void => {
 
       const layer1 = createLayerFunctionMock<Layer<any, any, NewInputWithAuthentication, any>>();
 
-      layer1.mockImplementationOnce((input, next) => {
+      layer1.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -1236,7 +1252,7 @@ describe(Composer.name, (): void => {
       terminus.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
 
       const composition = composer2.end(terminus);
@@ -1272,7 +1288,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
     });
 
@@ -1304,7 +1320,7 @@ describe(Composer.name, (): void => {
       terminus.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
 
       const composition = composer2.end(terminus);
@@ -1339,7 +1355,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
     });
 
@@ -1354,7 +1370,7 @@ describe(Composer.name, (): void => {
 
       const layer1 = createLayerFunctionMock<Layer<any, any, NewInputWithAuthentication, any>>();
 
-      layer1.mockImplementationOnce((input, next) => {
+      layer1.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -1371,7 +1387,7 @@ describe(Composer.name, (): void => {
       terminus.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
 
       const composition = composer2.end(terminus);
@@ -1406,7 +1422,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
     });
 
@@ -1438,7 +1454,7 @@ describe(Composer.name, (): void => {
       terminus.mockResolvedValueOnce(
         output('o:test:authenticated', {
           authenticated: false,
-        })
+        }),
       );
 
       const composition = composer2.end(terminus);
@@ -1473,7 +1489,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:authenticated', {
           authenticated: false,
-        })
+        }),
       );
     });
 
@@ -1488,7 +1504,7 @@ describe(Composer.name, (): void => {
 
       const layer1 = createLayerFunctionMock<Layer<any, any, NewInputWithAuthentication, any>>();
 
-      layer1.mockImplementationOnce((input, next) => {
+      layer1.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -1502,7 +1518,7 @@ describe(Composer.name, (): void => {
 
       const layer2 = createLayerFunctionMock<Layer<NewInputWithAuthentication, any, any, any>>();
 
-      layer2.mockImplementationOnce((input, next) => {
+      layer2.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -1519,7 +1535,7 @@ describe(Composer.name, (): void => {
       terminus.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
 
       const composition = composer3.end(terminus);
@@ -1564,7 +1580,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
     });
 
@@ -1593,7 +1609,7 @@ describe(Composer.name, (): void => {
 
       const layer2 = createLayerFunctionMock<Layer<any, NewOutputWithAuthentication, any, any>>();
 
-      layer2.mockImplementationOnce((input, next) => {
+      layer2.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -1610,7 +1626,7 @@ describe(Composer.name, (): void => {
       terminus.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
 
       const composition = composer3.end(terminus);
@@ -1655,7 +1671,7 @@ describe(Composer.name, (): void => {
       expect(result).toStrictEqual<OutputConstraint>(
         output('o:test:status', {
           status: 123,
-        })
+        }),
       );
     });
 
@@ -1674,12 +1690,12 @@ describe(Composer.name, (): void => {
         terminus.mockResolvedValueOnce(
           output('o:test:status', {
             status: 123,
-          })
+          }),
         );
 
         const composition = composer1.end(
           // @ts-expect-error missing expected property "authenticated"
-          terminus
+          terminus,
         );
 
         // -- Result
@@ -1702,7 +1718,7 @@ describe(Composer.name, (): void => {
         expect(result).toStrictEqual<OutputConstraint>(
           output('o:test:status', {
             status: 123,
-          })
+          }),
         );
       });
 
@@ -1720,12 +1736,12 @@ describe(Composer.name, (): void => {
         terminus.mockResolvedValueOnce(
           output('o:test:authenticated', {
             authenticated: false,
-          })
+          }),
         );
 
         const composition = composer1.end(
           // @ts-expect-error expected response is not in current output union
-          terminus
+          terminus,
         );
 
         // -- Result
@@ -1748,7 +1764,7 @@ describe(Composer.name, (): void => {
         expect(result).toStrictEqual<OutputConstraint>(
           output('o:test:authenticated', {
             authenticated: false,
-          })
+          }),
         );
       });
 
@@ -1763,13 +1779,13 @@ describe(Composer.name, (): void => {
 
         const layer1 = createLayerFunctionMock<Layer<NewOutputWithAuthentication, any, any, any>>();
 
-        layer1.mockImplementationOnce((input, next) => {
-        return next(input);
-      });
+        layer1.mockImplementationOnce(async (input, next) => {
+          return next(input);
+        });
 
         const composer2 = composer1.use(
           // @ts-expect-error missing expected property "authenticated"
-          layer1
+          layer1,
         );
 
         // -- Terminus
@@ -1779,7 +1795,7 @@ describe(Composer.name, (): void => {
         terminus.mockResolvedValueOnce(
           output('o:test:status', {
             status: 123,
-          })
+          }),
         );
 
         const composition = composer2.end(terminus);
@@ -1814,7 +1830,7 @@ describe(Composer.name, (): void => {
         expect(result).toStrictEqual<OutputConstraint>(
           output('o:test:status', {
             status: 123,
-          })
+          }),
         );
       });
 
@@ -1829,13 +1845,13 @@ describe(Composer.name, (): void => {
 
         const layer1 = createLayerFunctionMock<Layer<any, NewOutputWithAuthentication, any, any>>();
 
-        layer1.mockImplementationOnce((input, next) => {
-        return next(input);
-      });
+        layer1.mockImplementationOnce(async (input, next) => {
+          return next(input);
+        });
 
         const composer2 = composer1.use(
           // @ts-expect-error response is not in current output union
-          layer1
+          layer1,
         );
 
         // -- Terminus
@@ -1845,7 +1861,7 @@ describe(Composer.name, (): void => {
         terminus.mockResolvedValueOnce(
           output('o:test:status', {
             status: 123,
-          })
+          }),
         );
 
         const composition = composer2.end(terminus);
@@ -1880,7 +1896,7 @@ describe(Composer.name, (): void => {
         expect(result).toStrictEqual<OutputConstraint>(
           output('o:test:status', {
             status: 123,
-          })
+          }),
         );
       });
     });

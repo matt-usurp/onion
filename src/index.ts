@@ -4,17 +4,23 @@ import type { Grok } from '@matt-usurp/grok';
 // -- Utilities
 // --
 
-/**
- * A generic function with one {@link Input} and {@link Output}.
- */
-type Fn<Input, Output> = (input: Input) => Output;
+const InheritMarker = Symbol();
+const InheritInput = Symbol();
+const InheritOutput = Symbol();
 
-/**
- * A generic class with an invoke method of type {@link Fn}.
- */
-type ClassLike<Fn> = {
-  invoke: Fn;
-};
+export namespace OnionCore {
+  export namespace Syntax {
+    /**
+     * A generic function with one {@link Input} and {@link Output}.
+     */
+    export type FunctionImplementation<Input, Output> = (input: Input) => Output;
+
+    /**
+     * A generic class with an invoke method of type {@link Fn}.
+     */
+    export type ClassImplementation<Fn> = { invoke: Fn };
+  }
+}
 
 // --
 // -- Output
@@ -41,7 +47,14 @@ export type Output<T extends string, V> = {
 /**
  * A constraint type that can be used to accept types of {@link Output}.
  */
-export type OutputConstraint<T extends string = string> = Output<T, any>;
+export type OutputConstraint<T extends string = string> = (
+/* eslint-disable @typescript-eslint/indent */
+  Output<
+    T,
+    any // eslint-disable-line @typescript-eslint/no-explicit-any
+  >
+/* eslint-enable @typescript-eslint/indent */
+);
 
 /**
  * Create instances of {@link Output} (generic type {@link T}).
@@ -52,194 +65,275 @@ export const output = <T extends OutputConstraint>(type: T['type'], value: T['va
 // -- Terminus
 // --
 
-export type TerminusClass<
-  GivenInput,
-  GivenOutput extends OutputConstraint,
-> = ClassLike<Fn<GivenInput, Promise<GivenOutput>>>;
+export namespace OnionCore {
+  /**
+   * A terminus implementation using the class style syntax.
+   *
+   * Take the {@link GivenInput} and provide a return of {@link GivenOutput}.
+   */
+  export type TerminusClassImplementation<
+    GivenInput,
+    GivenOutput extends OutputConstraint,
+  > = (
+  /* eslint-disable @typescript-eslint/indent */
+    Syntax.ClassImplementation<
+      Syntax.FunctionImplementation<
+        GivenInput,
+        Promise<GivenOutput>
+      >
+    >
+  /* eslint-enable @typescript-eslint/indent */
+  );
 
-export type TerminusFunction<
-  GivenInput,
-  GivenOutput extends OutputConstraint,
-> = Fn<GivenInput, Promise<GivenOutput>>;
+  /**
+   * A terminus implementation using the functional style syntax.
+   *
+   * Take the {@link GivenInput} and provide a return of {@link GivenOutput}.
+   */
+  export type TerminusFunctionImplementation<
+    GivenInput,
+    GivenOutput extends OutputConstraint,
+  > = Syntax.FunctionImplementation<GivenInput, Promise<GivenOutput>>;
 
-export type Terminus<
-  GivenInput,
-  GivenOutput extends OutputConstraint,
-> = (
-  | TerminusClass<GivenInput, GivenOutput>
-  | TerminusFunction<GivenInput, GivenOutput>
+  export type MakeTerminusInput<T extends TerminusConstraint> = (
+    T extends Terminus<infer I, any> // eslint-disable-line @typescript-eslint/no-explicit-any
+      ? Grok.If<Grok.Value.IsAny<I>, undefined, I>
+      : undefined
+  );
+
+  export type MakeTerminusOutput<T extends TerminusConstraint> = Promise<(
+    T extends Terminus<any, infer I> // eslint-disable-line @typescript-eslint/no-explicit-any
+      ? Grok.If<Grok.Value.IsAny<I>, OutputConstraint, I>
+      : OutputConstraint
+  )>;
+}
+
+/**
+ * Take the {@link GivenInput} and provide a return of {@link GivenOutput}.
+ */
+export type Terminus<GivenInput, GivenOutput extends OutputConstraint> = (
+  | OnionCore.TerminusClassImplementation<GivenInput, GivenOutput>
+  | OnionCore.TerminusFunctionImplementation<GivenInput, GivenOutput>
 );
 
-export type TerminusKind = Terminus<any, any>;
+// Syntax sugar:
+export namespace Terminus {
+  export import Class = OnionCore.TerminusClassImplementation;
+  export import Fn = OnionCore.TerminusFunctionImplementation;
 
-export type MakeTerminusInput<T extends TerminusKind> = (
-  T extends Terminus<infer I, any>
-    ? (
-      Grok.If<
-        Grok.Value.IsAny<I>,
-        undefined,
-        I
-      >
-    )
-    : undefined
-);
+  export import Input = OnionCore.MakeTerminusInput;
+  export import Output = OnionCore.MakeTerminusOutput;
+}
 
-export type MakeTerminusOutput<T extends TerminusKind> = Promise<(
-  T extends Terminus<any, infer I>
-    ? (
-      Grok.If<
-        Grok.Value.IsAny<I>,
-        OutputConstraint,
-        I
-      >
-    )
-    : OutputConstraint
-)>;
+/**
+ * A constraint type that can be used to accept types of {@link Terminus}.
+ */
+export type TerminusConstraint = Terminus<any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 // --
 // -- Layer
 // --
 
-const InheritMarker = Symbol();
-const InheritInput = Symbol();
-const InheritOutput = Symbol();
+export namespace OnionCore {
+  /**
+   * This requires that the given input to the {@link Layer} be passed through to the next function via spread.
+   * The purpose of this is to ensure properties that you are not aware are passed down through the stack.
+   */
+  export type LayerEnforceNextInputPassThrough = {
+    readonly [InheritMarker]: typeof InheritInput;
+  };
 
-export type LayerEnforceNextInputPassThrough = {
-  readonly [InheritMarker]: typeof InheritInput;
-};
+  /**
+   * This requires that output from the next function is passed through the {@link Layer} return statement.
+   * The purpose of this is to ensure the responses from other layers are passed up through the stack.
+   */
+  export type LayerEnforceNextOutputPassThrough = Output<'layer:passthtrough', {
+    readonly [InheritMarker]: typeof InheritOutput;
+  }>;
 
-export type LayerEnforceNextOutputPassThrough = Output<'layer:passthtrough', {
-  readonly [InheritMarker]: typeof InheritOutput;
-}>;
+  /**
+   * A layer implementation using the class style syntax.
+   *
+   * Take the given {@link CurrentInput} and pass through to the next function whilst providing any {@link NewInput} if defined.
+   * With the given {@link NewOutput} and ensure its compatible or transformed into {@link CurrentOutput}.
+   */
+  export type LayerClassImplementation<
+    CurrentInput,
+    CurrentOutput extends OutputConstraint,
+    NewInput,
+    NewOutput extends OutputConstraint,
+  > = Syntax.ClassImplementation<LayerFunctionImplementation<CurrentInput, CurrentOutput, NewInput, NewOutput>>;
 
-export type LayerClass<
-  CurrentInput,
-  CurrentOutput extends OutputConstraint,
-  NewInput,
-  NewOutput extends OutputConstraint,
-> = ClassLike<LayerFunction<CurrentInput, CurrentOutput, NewInput, NewOutput>>;
+  /**
+   * A layer implementation using the functional style syntax.
+   *
+   * Take the given {@link CurrentInput} and pass through to the next function whilst providing any {@link NewInput} if defined.
+   * With the given {@link NewOutput} and ensure its compatible or transformed into {@link CurrentOutput}.
+   */
+  export type LayerFunctionImplementation<
+    CurrentInput,
+    CurrentOutput extends OutputConstraint,
+    NewInput,
+    NewOutput extends OutputConstraint,
+  > = (
+    input: CurrentInput & LayerEnforceNextInputPassThrough,
+    next: Syntax.FunctionImplementation<NewInput & LayerEnforceNextInputPassThrough, Promise<NewOutput | LayerEnforceNextOutputPassThrough>>,
+  ) => Promise<CurrentOutput | LayerEnforceNextOutputPassThrough>;
 
-export type LayerFunction<
-  CurrentInput,
-  CurrentOutput extends OutputConstraint,
-  NewInput,
-  NewOutput extends OutputConstraint,
-> = (input: CurrentInput & LayerEnforceNextInputPassThrough, next: Fn<NewInput & LayerEnforceNextInputPassThrough, Promise<NewOutput | LayerEnforceNextOutputPassThrough>>) => Promise<CurrentOutput | LayerEnforceNextOutputPassThrough>;
+  export type MakeLayerInput<T extends LayerConstraint> = (
+    T extends Layer<infer I, any, any, any> // eslint-disable-line @typescript-eslint/no-explicit-any
+      ? (
+      /* eslint-disable @typescript-eslint/indent */
+        Grok.If<
+          Grok.Value.IsAny<I>,
+          LayerEnforceNextInputPassThrough,
+          I & LayerEnforceNextInputPassThrough
+        >
+      /* eslint-enable @typescript-eslint/indent */
+      )
+      : LayerEnforceNextInputPassThrough
+  );
 
+  export type MakeLayerOutput<T extends LayerConstraint> = Promise<(
+    T extends Layer<any, infer I, any, any> // eslint-disable-line @typescript-eslint/no-explicit-any
+      ? (
+      /* eslint-disable @typescript-eslint/indent */
+        Grok.If<
+          Grok.Value.IsAny<I>,
+          LayerEnforceNextOutputPassThrough,
+          I | LayerEnforceNextOutputPassThrough
+        >
+      /* eslint-enable @typescript-eslint/indent */
+      )
+      : LayerEnforceNextOutputPassThrough
+  )>;
+
+  export type MakeLayerNext<T extends LayerConstraint> = (
+  /* eslint-disable @typescript-eslint/indent */
+    Syntax.FunctionImplementation<
+      (
+        T extends Layer<any, any, infer I, any> // eslint-disable-line @typescript-eslint/no-explicit-any
+          ? (
+            Grok.If<
+              Grok.Value.IsAny<I>,
+              LayerEnforceNextInputPassThrough,
+              I & LayerEnforceNextInputPassThrough
+            >
+          )
+          : LayerEnforceNextInputPassThrough
+      ),
+      Promise<(
+        T extends Layer<any, any, any, infer I> // eslint-disable-line @typescript-eslint/no-explicit-any
+          ? (
+            Grok.If<
+              Grok.Value.IsAny<I>,
+              LayerEnforceNextOutputPassThrough,
+              I | LayerEnforceNextOutputPassThrough
+            >
+          )
+          : LayerEnforceNextOutputPassThrough
+      )>
+    >
+  /* eslint-enable @typescript-eslint/indent */
+  );
+}
+
+/**
+ * Take the given {@link CurrentInput} and pass through to the next function whilst providing any {@link NewInput} if defined.
+ * With the given {@link NewOutput} and ensure its compatible or transformed into {@link CurrentOutput}.
+ */
 export type Layer<
   CurrentInput,
   CurrentOutput extends OutputConstraint,
   NewInput,
   NewOutput extends OutputConstraint,
 > = (
-  | LayerClass<CurrentInput, CurrentOutput, NewInput, NewOutput>
-  | LayerFunction<CurrentInput, CurrentOutput, NewInput, NewOutput>
+  | OnionCore.LayerClassImplementation<CurrentInput, CurrentOutput, NewInput, NewOutput>
+  | OnionCore.LayerFunctionImplementation<CurrentInput, CurrentOutput, NewInput, NewOutput>
 );
 
-export type LayerKind = Layer<any, any, any, any>;
+// Syntax sugar:
+export namespace Layer {
+  export import Class = OnionCore.LayerClassImplementation;
+  export import Fn = OnionCore.LayerFunctionImplementation;
 
-export type MakeLayerInput<T extends LayerKind> = (
-  T extends Layer<infer I, any, any, any>
-    ? (
-      Grok.If<
-        Grok.Value.IsAny<I>,
-        LayerEnforceNextInputPassThrough,
-        I & LayerEnforceNextInputPassThrough
-      >
-    )
-    : LayerEnforceNextInputPassThrough
-);
+  export import Input = OnionCore.MakeLayerInput;
+  export import Output = OnionCore.MakeLayerOutput;
+  export import Next = OnionCore.MakeLayerNext;
+}
 
-export type MakeLayerOutput<T extends LayerKind> = Promise<(
-  T extends Layer<any, infer I, any, any>
-    ? (
-      Grok.If<
-        Grok.Value.IsAny<I>,
-        LayerEnforceNextOutputPassThrough,
-        I | LayerEnforceNextOutputPassThrough
-      >
-    )
-    : LayerEnforceNextOutputPassThrough
-)>;
-
-export type MakeLayerNext<T extends LayerKind> = (
-  Fn<
-    (
-      T extends Layer<any, any, infer I, any>
-        ? (
-          Grok.If<
-            Grok.Value.IsAny<I>,
-            LayerEnforceNextInputPassThrough,
-            I & LayerEnforceNextInputPassThrough
-          >
-        )
-        : LayerEnforceNextInputPassThrough
-    ),
-    Promise<(
-      T extends Layer<any, any, any, infer I>
-        ? (
-          Grok.If<
-            Grok.Value.IsAny<I>,
-            LayerEnforceNextOutputPassThrough,
-            I | LayerEnforceNextOutputPassThrough
-          >
-        )
-        : LayerEnforceNextOutputPassThrough
-    )>
-  >
-);
+/**
+ * A constraint type that can be used to accept types of {@link Layer}.
+ */
+export type LayerConstraint = Layer<any, any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 // --
 // -- Composition
 // --
 
-type LayerBuilderPassThrough = Fn<any, any>;
+export namespace OnionCore {
+  export type CompositionInstrumentFunction = (
+    thing: LayerConstraint | TerminusConstraint,
+    next: OnionCore.Syntax.FunctionImplementation<any, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
+  ) => OnionCore.Syntax.FunctionImplementation<any, Promise<any>>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-type LayerInstrument = (thing: LayerKind | TerminusKind, next: Fn<any, any>) => Fn<any, Promise<any>>;
-type LayerBuilderFunction<I, O> = (instrument?: LayerInstrument) => Fn<I, Promise<O>>;
+  export type CompositionBuilderFunction<I, O> = (instrument?: CompositionInstrumentFunction) => OnionCore.Syntax.FunctionImplementation<I, Promise<O>>;
+}
 
-export type ComposerComposition<
+export type Composition<
   GivenInput,
   GivenOutput extends OutputConstraint,
 > = {
-  readonly layers: LayerKind[];
-  readonly build: LayerBuilderFunction<GivenInput, GivenOutput>;
-  readonly invoke: Fn<GivenInput, Promise<GivenOutput>>;
+  readonly layers: LayerConstraint[];
+  readonly build: OnionCore.CompositionBuilderFunction<GivenInput, GivenOutput>;
+  readonly invoke: OnionCore.Syntax.FunctionImplementation<GivenInput, Promise<GivenOutput>>;
 };
 
-export const extractInvokableLayer = <
-  T extends Layer<A, B, C, D>,
-  A = T extends Layer<infer I, any, any, any> ? I : never,
-  B extends OutputConstraint = T extends Layer<any, infer I, any, any> ? I : never,
-  C = T extends Layer<any, any, infer I, any> ? I : never,
-  D extends OutputConstraint = T extends Layer<any, any, any, infer I> ? I : never,
->(value: T): LayerFunction<A, B, C, D> => {
-  if ((value as LayerClass<A, B, C, D>).invoke !== undefined) {
-    return (value as LayerClass<A, B, C, D>).invoke;
+// Syntax sugar:
+export namespace Composition {
+  export import Instrument = OnionCore.CompositionInstrumentFunction;
+}
+
+// --
+// -- Composition Utility
+// --
+
+export const createInvokableTerminusFunction = <
+  GivenTerminus extends Terminus<GivenInput, GivenOutput>,
+  GivenInput = GivenTerminus extends Terminus<infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  GivenOutput extends OutputConstraint = GivenTerminus extends Terminus<any, infer I> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+>(value: GivenTerminus): OnionCore.TerminusFunctionImplementation<GivenInput, GivenOutput> => {
+  if ((value as OnionCore.TerminusClassImplementation<GivenInput, GivenOutput>).invoke !== undefined) {
+    return (value as OnionCore.TerminusClassImplementation<GivenInput, GivenOutput>).invoke;
   }
 
-  return value as LayerFunction<A, B, C, D>;
+  return value as OnionCore.TerminusFunctionImplementation<GivenInput, GivenOutput>;
 };
 
-export const extractInvokableTerminus = <
-  T extends Terminus<A, B>,
-  A = T extends Terminus<infer I, any> ? I : never,
-  B extends OutputConstraint = T extends Terminus<any, infer I> ? I : never,
->(value: T): TerminusFunction<A, B> => {
-  if ((value as TerminusClass<A, B>).invoke !== undefined) {
-    return (value as TerminusClass<A, B>).invoke;
+export const createInvokableLayerFunction = <
+  GivenLayer extends Layer<CurrentInput, CurrentOutput, NewInput, NewOutput>,
+  CurrentInput = GivenLayer extends Layer<infer I, any, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  CurrentOutput extends OutputConstraint = GivenLayer extends Layer<any, infer I, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  NewInput = GivenLayer extends Layer<any, any, infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  NewOutput extends OutputConstraint = GivenLayer extends Layer<any, any, any, infer I> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+>(value: GivenLayer): OnionCore.LayerFunctionImplementation<CurrentInput, CurrentOutput, NewInput, NewOutput> => {
+  if ((value as OnionCore.LayerClassImplementation<CurrentInput, CurrentOutput, NewInput, NewOutput>).invoke !== undefined) {
+    return (value as OnionCore.LayerClassImplementation<CurrentInput, CurrentOutput, NewInput, NewOutput>).invoke;
   }
 
-  return value as TerminusFunction<A, B>;
+  return value as OnionCore.LayerFunctionImplementation<CurrentInput, CurrentOutput, NewInput, NewOutput>;
 };
 
+/**
+ * Compose an onion function (the {@link Terminus}) with given {@link Layer Layers}.
+ */
 export class Composer<
   CurrentInput,
   CurrentOutput extends OutputConstraint,
   InitialInput,
   InitialOutput extends OutputConstraint,
 > {
-  protected readonly layers: Layer<any, any, any, any>[] = [];
+  protected readonly layers: Layer<any, any, any, any>[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
 
   /**
    * Create an instance of {@link Composer} with {@link InitialInput} and {@link InitialOutput}.
@@ -257,43 +351,45 @@ export class Composer<
   protected constructor() { }
 
   /**
-   * Make use of the {@link GivenLayer}.
+   * Apply the given {@link GivenLayer} and its types.
    */
   public use<
-    GivenLayer extends Layer<GivenInput, GivenOutput, any, any>,
+    GivenLayer extends Layer<GivenInput, GivenOutput, any, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
     GivenInput extends CurrentInput,
-    GivenOutput extends CurrentOutput | LayerEnforceNextOutputPassThrough,
+    GivenOutput extends CurrentOutput | OnionCore.LayerEnforceNextOutputPassThrough,
   >(Layer: GivenLayer): (
-      Composer<
-        (
-          GivenLayer extends Layer<any, any, infer I, any>
-          ? (
-            Grok.If<
-              Grok.Value.IsAny<I>,
-              CurrentInput,
-              Grok.Merge<CurrentInput, I>
-            >
-          )
-          : 'Error:CannotInferGivenLayer'
-        ),
-        (
-          GivenLayer extends Layer<any, any, any, infer I>
-          ? (
-            Grok.If<
-              Grok.Value.IsAny<I>,
-              Exclude<CurrentOutput, LayerEnforceNextOutputPassThrough>,
-              Grok.Union<CurrentOutput, Exclude<I, LayerEnforceNextOutputPassThrough>>
-            >
-          )
-          : 'Error:CannotInferGivenLayer'
-        ),
-        InitialInput,
-        InitialOutput
-      >
-    ) {
+  /* eslint-disable @typescript-eslint/indent */
+    Composer<
+      (
+        GivenLayer extends Layer<any, any, infer I, any> // eslint-disable-line @typescript-eslint/no-explicit-any
+        ? (
+          Grok.If<
+            Grok.Value.IsAny<I>,
+            CurrentInput,
+            Grok.Merge<CurrentInput, I>
+          >
+        )
+        : 'Error:CannotInferGivenLayer'
+      ),
+      (
+        GivenLayer extends Layer<any, any, any, infer I> // eslint-disable-line @typescript-eslint/no-explicit-any
+        ? (
+          Grok.If<
+            Grok.Value.IsAny<I>,
+            Exclude<CurrentOutput, OnionCore.LayerEnforceNextOutputPassThrough>,
+            Grok.Union<CurrentOutput, Exclude<I, OnionCore.LayerEnforceNextOutputPassThrough>>
+          >
+        )
+        : 'Error:CannotInferGivenLayer'
+      ),
+      InitialInput,
+      InitialOutput
+    >
+  /* eslint-enable @typescript-eslint/indent */
+  ) {
     this.layers.push(Layer);
 
-    return this as any;
+    return this as any; // eslint-disable-line @typescript-eslint/no-explicit-any
   }
 
   /**
@@ -303,10 +399,12 @@ export class Composer<
     GivenTerminus extends Terminus<GivenInput, GivenOutput>,
     GivenInput extends CurrentInput,
     GivenOutput extends CurrentOutput,
-  >(terminus: GivenTerminus): ComposerComposition<InitialInput, InitialOutput> {
-    const terminusInvokable = extractInvokableTerminus(terminus as any);
+  >(terminus: GivenTerminus): Composition<InitialInput, InitialOutput> {
+    const terminusInvokable = createInvokableTerminusFunction(terminus as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
-    const build: LayerBuilderFunction<InitialInput, InitialOutput> = (instrument) => {
+    type LayerBuilderPassThrough = OnionCore.Syntax.FunctionImplementation<any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+    const build: OnionCore.CompositionBuilderFunction<InitialInput, InitialOutput> = (instrument) => {
       if (this.layers.length === 0) {
         if (instrument === undefined) {
           return terminusInvokable as LayerBuilderPassThrough;
@@ -317,22 +415,24 @@ export class Composer<
 
       if (instrument === undefined) {
         return this.layers.reduceRight<LayerBuilderPassThrough>((next, layer) => {
-          return (input: any) => extractInvokableLayer(layer)(input, next);
+          return async (input) => createInvokableLayerFunction(layer)(input, next);
         }, terminusInvokable);
       }
 
       return this.layers.reduceRight<LayerBuilderPassThrough>((next, layer) => {
-        return instrument(layer, (input: any) => extractInvokableLayer(layer)(input, next));
+        return instrument(layer, async (input) => createInvokableLayerFunction(layer)(input, next));
       }, terminusInvokable);
     };
 
     return {
-      layers: this.layers as any,
-
+      layers: this.layers,
       build,
       invoke: build(),
     };
   }
 }
 
-export type ComposerKind = Composer<any, any, any, any>;
+/**
+ * A constraint type that can be used to accept types of {@link Composer}.
+ */
+export type ComposerConstraint = Composer<any, any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
