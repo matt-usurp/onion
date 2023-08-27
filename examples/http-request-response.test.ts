@@ -21,7 +21,10 @@ type TestResponseDecoded<T> = Output<'http:decoded', {
 type TestDecodeRequestLayer<T> = LayerClass<TestRequest, any, TestRequestDecoded<T>, any>;
 
 class TestDecodeRequest<T> implements TestDecodeRequestLayer<T> {
-  public invoke(input: MakeLayerInput<TestDecodeRequestLayer<T>>, next: MakeLayerNext<TestDecodeRequestLayer<T>>): MakeLayerOutput<TestDecodeRequestLayer<T>> {
+  /**
+   * {@inheritdoc}
+   */
+  public async invoke(input: MakeLayerInput<TestDecodeRequestLayer<T>>, next: MakeLayerNext<TestDecodeRequestLayer<T>>): MakeLayerOutput<TestDecodeRequestLayer<T>> {
     return next({
       ...input,
 
@@ -33,8 +36,11 @@ class TestDecodeRequest<T> implements TestDecodeRequestLayer<T> {
 type TestDecodeResponseLayer<T> = LayerClass<any, TestResponse, any, TestResponseDecoded<T>>;
 
 class TestDecodeResponse<T> implements TestDecodeResponseLayer<T> {
-  public invoke(input: MakeLayerInput<TestDecodeResponseLayer<T>>, next: MakeLayerNext<TestDecodeResponseLayer<T>>): MakeLayerOutput<TestDecodeResponseLayer<T>> {
-    const response = next(input);
+  /**
+   * {@inheritdoc}
+   */
+  public async invoke(input: MakeLayerInput<TestDecodeResponseLayer<T>>, next: MakeLayerNext<TestDecodeResponseLayer<T>>): MakeLayerOutput<TestDecodeResponseLayer<T>> {
+    const response = await next(input);
 
     if (response.type === 'http:decoded') {
       return {
@@ -62,7 +68,10 @@ type TestResponseData = {
 type TestRequestHandlerTerminus = TerminusClass<TestRequestDecoded<TestRequestData>, TestResponseDecoded<TestResponseData>>;
 
 class TestRequestHandler implements TestRequestHandlerTerminus {
-  public invoke(input: MakeTerminusInput<TestRequestHandlerTerminus>): MakeTerminusOutput<TestRequestHandlerTerminus> {
+  /**
+   * {@inheritdoc}
+   */
+  public async invoke(input: MakeTerminusInput<TestRequestHandlerTerminus>): MakeTerminusOutput<TestRequestHandlerTerminus> {
     return {
       type: 'http:decoded',
       value: {
@@ -76,14 +85,14 @@ class TestRequestHandler implements TestRequestHandlerTerminus {
 }
 
 describe('example, http-request-response', (): void => {
-  it('with basic, request parser, response parser and request handler', (): void => {
+  it('with basic, request parser, response parser and request handler', async (): Promise<void> => {
     const composition = Composer.create<TestRequest, TestResponse>()
       .use(new TestDecodeRequest<TestRequestData>())
       .use(new TestDecodeResponse<TestResponseData>())
       .end(new TestRequestHandler());
 
     expect(
-      composition.invoke({
+      await composition.invoke({
         body: JSON.stringify({
           name: 'Jason',
           age: 28,

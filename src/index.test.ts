@@ -59,7 +59,7 @@ type InferComposerCurrentOutput<T extends ComposerKind> = T extends Composer<any
 
 describe(Composer.name, (): void => {
   describe('using class style', (): void => {
-    it('with terminus', (): void => {
+    it('with terminus', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       assertInputType<TestBaseInput, InferComposerCurrentInput<typeof composer1>>();
@@ -69,7 +69,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-      terminus.invoke.mockReturnValueOnce(
+      terminus.invoke.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
         })
@@ -81,7 +81,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(0);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -101,7 +101,7 @@ describe(Composer.name, (): void => {
       );
     });
 
-    it('with layer, pass through, makes no changes', (): void => {
+    it('with layer, pass through, makes no changes', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       // -- Layer
@@ -122,7 +122,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-      terminus.invoke.mockReturnValueOnce(
+      terminus.invoke.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
         })
@@ -134,7 +134,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -164,7 +164,7 @@ describe(Composer.name, (): void => {
       );
     });
 
-    it('with layer, expecting exact current input, makes no changes', (): void => {
+    it('with layer, expecting exact current input, makes no changes', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       // -- Layer
@@ -185,7 +185,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-      terminus.invoke.mockReturnValueOnce(
+      terminus.invoke.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
         })
@@ -197,7 +197,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -227,7 +227,7 @@ describe(Composer.name, (): void => {
       );
     });
 
-    it('with layer, expecting subset of the current input, makes no changes', (): void => {
+    it('with layer, expecting subset of the current input, makes no changes', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       // -- Layer
@@ -252,7 +252,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-      terminus.invoke.mockReturnValueOnce(
+      terminus.invoke.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
         })
@@ -264,7 +264,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -294,7 +294,7 @@ describe(Composer.name, (): void => {
       );
     });
 
-    it('with layer, providing new input, merges with current input', (): void => {
+    it('with layer, providing new input, merges with current input', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       // -- Layer
@@ -319,7 +319,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-      terminus.invoke.mockReturnValueOnce(
+      terminus.invoke.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
         })
@@ -332,7 +332,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -362,7 +362,7 @@ describe(Composer.name, (): void => {
       );
     });
 
-    it('with layer, proving new response, unions with current response', (): void => {
+    it('with layer, proving new response, unions with current response', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       // -- Layer
@@ -373,7 +373,7 @@ describe(Composer.name, (): void => {
 
       const layer1 = createLayerClassMock<Layer<any, any, any, NewOutputWithAuthentication>>();
 
-      layer1.invoke.mockImplementationOnce((input, next) => {
+      layer1.invoke.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -387,7 +387,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-      terminus.invoke.mockReturnValueOnce(
+      terminus.invoke.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
         })
@@ -399,7 +399,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -429,7 +429,7 @@ describe(Composer.name, (): void => {
       );
     });
 
-    it('with layer, providing new input, terminus expecting new input, merges with current input and allows terminus', (): void => {
+    it('with layer, providing new input, terminus expecting new input, merges with current input and allows terminus', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       // -- Layer
@@ -454,7 +454,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusClassMock<Terminus<NewInputWithAuthentication, TestBaseOutput>>();
 
-      terminus.invoke.mockReturnValueOnce(
+      terminus.invoke.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
         })
@@ -466,7 +466,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -496,7 +496,7 @@ describe(Composer.name, (): void => {
       );
     });
 
-    it('with layer, proving new response, terminus expects new response, unions with current response and allows terminus', (): void => {
+    it('with layer, proving new response, terminus expects new response, unions with current response and allows terminus', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       // -- Layer
@@ -507,7 +507,7 @@ describe(Composer.name, (): void => {
 
       const layer1 = createLayerClassMock<Layer<any, any, any, NewOutputWithAuthentication>>();
 
-      layer1.invoke.mockImplementationOnce((input, next) => {
+      layer1.invoke.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -521,7 +521,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusClassMock<Terminus<TestBaseInput, NewOutputWithAuthentication>>();
 
-      terminus.invoke.mockReturnValueOnce(
+      terminus.invoke.mockResolvedValueOnce(
         output('o:test:authenticated', {
           authenticated: false,
         })
@@ -533,7 +533,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -563,7 +563,7 @@ describe(Composer.name, (): void => {
       );
     });
 
-    it('with layers, first providing new input, second expecting new input, merges with current input and allows second layer', (): void => {
+    it('with layers, first providing new input, second expecting new input, merges with current input and allows second layer', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       // -- Layer
@@ -602,7 +602,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-      terminus.invoke.mockReturnValueOnce(
+      terminus.invoke.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
         })
@@ -614,7 +614,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(2);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -654,7 +654,7 @@ describe(Composer.name, (): void => {
       );
     });
 
-    it('with layers, first providing new response, second expecting new response, unions with current response and allows second layer', (): void => {
+    it('with layers, first providing new response, second expecting new response, unions with current response and allows second layer', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       // -- Layer
@@ -665,7 +665,7 @@ describe(Composer.name, (): void => {
 
       const layer1 = createLayerClassMock<Layer<any, any, any, NewOutputWithAuthentication>>();
 
-      layer1.invoke.mockImplementationOnce((input, next) => {
+      layer1.invoke.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -693,7 +693,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-      terminus.invoke.mockReturnValueOnce(
+      terminus.invoke.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
         })
@@ -705,7 +705,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(2);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -746,7 +746,7 @@ describe(Composer.name, (): void => {
     });
 
     describe('for type only error cases', (): void => {
-      it('with terminus, expected input does not exist, raises build errors', (): void => {
+      it('with terminus, expected input does not exist, raises build errors', async (): Promise<void> => {
         const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
         // -- Terminus
@@ -757,7 +757,7 @@ describe(Composer.name, (): void => {
 
         const terminus = createTerminusClassMock<Terminus<ExpectInput, TestBaseOutput>>();
 
-        terminus.invoke.mockReturnValueOnce(
+        terminus.invoke.mockResolvedValueOnce(
           output('o:test:status', {
             status: 123,
           })
@@ -772,7 +772,7 @@ describe(Composer.name, (): void => {
 
         expect(composition.layers.length).toStrictEqual(0);
 
-        const result = composition.invoke({
+        const result = await composition.invoke({
           id: 'test:id',
           name: 'test:name',
           random: 3,
@@ -792,7 +792,7 @@ describe(Composer.name, (): void => {
         );
       });
 
-      it('with terminus, expected output does not exist, raises build errors', (): void => {
+      it('with terminus, expected output does not exist, raises build errors', async (): Promise<void> => {
         const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
         // -- Terminus
@@ -803,7 +803,7 @@ describe(Composer.name, (): void => {
 
         const terminus = createTerminusClassMock<Terminus<TestBaseInput, NewOutputWithAuthentication>>();
 
-        terminus.invoke.mockReturnValueOnce(
+        terminus.invoke.mockResolvedValueOnce(
           output('o:test:authenticated', {
             authenticated: false,
           })
@@ -818,7 +818,7 @@ describe(Composer.name, (): void => {
 
         expect(composition.layers.length).toStrictEqual(0);
 
-        const result = composition.invoke({
+        const result = await composition.invoke({
           id: 'test:id',
           name: 'test:name',
           random: 3,
@@ -838,7 +838,7 @@ describe(Composer.name, (): void => {
         );
       });
 
-      it('with layer, expected input does not exist, raises build errors', (): void => {
+      it('with layer, expected input does not exist, raises build errors', async (): Promise<void> => {
         const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
         // -- Layer
@@ -862,7 +862,7 @@ describe(Composer.name, (): void => {
 
         const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-        terminus.invoke.mockReturnValueOnce(
+        terminus.invoke.mockResolvedValueOnce(
           output('o:test:status', {
             status: 123,
           })
@@ -874,7 +874,7 @@ describe(Composer.name, (): void => {
 
         expect(composition.layers.length).toStrictEqual(1);
 
-        const result = composition.invoke({
+        const result = await composition.invoke({
           id: 'test:id',
           name: 'test:name',
           random: 3,
@@ -904,7 +904,7 @@ describe(Composer.name, (): void => {
         );
       });
 
-      it('with layer, expected output does not exist, raises build errors', (): void => {
+      it('with layer, expected output does not exist, raises build errors', async (): Promise<void> => {
         const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
         // -- Layer
@@ -928,7 +928,7 @@ describe(Composer.name, (): void => {
 
         const terminus = createTerminusClassMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-        terminus.invoke.mockReturnValueOnce(
+        terminus.invoke.mockResolvedValueOnce(
           output('o:test:status', {
             status: 123,
           })
@@ -940,7 +940,7 @@ describe(Composer.name, (): void => {
 
         expect(composition.layers.length).toStrictEqual(1);
 
-        const result = composition.invoke({
+        const result = await composition.invoke({
           id: 'test:id',
           name: 'test:name',
           random: 3,
@@ -973,7 +973,7 @@ describe(Composer.name, (): void => {
   });
 
   describe('using function style', (): void => {
-    it('with terminus', (): void => {
+    it('with terminus', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       assertInputType<TestBaseInput, InferComposerCurrentInput<typeof composer1>>();
@@ -983,7 +983,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-      terminus.mockReturnValueOnce(
+      terminus.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
         })
@@ -995,7 +995,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(0);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -1015,7 +1015,7 @@ describe(Composer.name, (): void => {
       );
     });
 
-    it('with layer, pass through, makes no changes', (): void => {
+    it('with layer, pass through, makes no changes', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       // -- Layer
@@ -1036,7 +1036,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-      terminus.mockReturnValueOnce(
+      terminus.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
         })
@@ -1048,7 +1048,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -1078,7 +1078,7 @@ describe(Composer.name, (): void => {
       );
     });
 
-    it('with layer, expecting exact current input, makes no changes', (): void => {
+    it('with layer, expecting exact current input, makes no changes', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       // -- Layer
@@ -1099,7 +1099,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-      terminus.mockReturnValueOnce(
+      terminus.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
         })
@@ -1111,7 +1111,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -1141,7 +1141,7 @@ describe(Composer.name, (): void => {
       );
     });
 
-    it('with layer, expecting subset of the current input, makes no changes', (): void => {
+    it('with layer, expecting subset of the current input, makes no changes', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       // -- Layer
@@ -1166,7 +1166,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-      terminus.mockReturnValueOnce(
+      terminus.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
         })
@@ -1178,7 +1178,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -1208,7 +1208,7 @@ describe(Composer.name, (): void => {
       );
     });
 
-    it('with layer, providing new input, merges with current input', (): void => {
+    it('with layer, providing new input, merges with current input', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       // -- Layer
@@ -1233,7 +1233,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-      terminus.mockReturnValueOnce(
+      terminus.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
         })
@@ -1246,7 +1246,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -1276,7 +1276,7 @@ describe(Composer.name, (): void => {
       );
     });
 
-    it('with layer, proving new response, unions with current response', (): void => {
+    it('with layer, proving new response, unions with current response', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       // -- Layer
@@ -1287,7 +1287,7 @@ describe(Composer.name, (): void => {
 
       const layer1 = createLayerFunctionMock<Layer<any, any, any, NewOutputWithAuthentication>>();
 
-      layer1.mockImplementationOnce((input, next) => {
+      layer1.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -1301,7 +1301,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-      terminus.mockReturnValueOnce(
+      terminus.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
         })
@@ -1313,7 +1313,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -1343,7 +1343,7 @@ describe(Composer.name, (): void => {
       );
     });
 
-    it('with layer, providing new input, terminus expecting new input, merges with current input and allows terminus', (): void => {
+    it('with layer, providing new input, terminus expecting new input, merges with current input and allows terminus', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       // -- Layer
@@ -1368,7 +1368,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusFunctionMock<Terminus<NewInputWithAuthentication, TestBaseOutput>>();
 
-      terminus.mockReturnValueOnce(
+      terminus.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
         })
@@ -1380,7 +1380,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -1410,7 +1410,7 @@ describe(Composer.name, (): void => {
       );
     });
 
-    it('with layer, proving new response, terminus expects new response, unions with current response and allows terminus', (): void => {
+    it('with layer, proving new response, terminus expects new response, unions with current response and allows terminus', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       // -- Layer
@@ -1421,7 +1421,7 @@ describe(Composer.name, (): void => {
 
       const layer1 = createLayerFunctionMock<Layer<any, any, any, NewOutputWithAuthentication>>();
 
-      layer1.mockImplementationOnce((input, next) => {
+      layer1.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -1435,7 +1435,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, NewOutputWithAuthentication>>();
 
-      terminus.mockReturnValueOnce(
+      terminus.mockResolvedValueOnce(
         output('o:test:authenticated', {
           authenticated: false,
         })
@@ -1447,7 +1447,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(1);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -1477,7 +1477,7 @@ describe(Composer.name, (): void => {
       );
     });
 
-    it('with layers, first providing new input, second expecting new input, merges with current input and allows second layer', (): void => {
+    it('with layers, first providing new input, second expecting new input, merges with current input and allows second layer', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       // -- Layer
@@ -1516,7 +1516,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-      terminus.mockReturnValueOnce(
+      terminus.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
         })
@@ -1528,7 +1528,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(2);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -1568,7 +1568,7 @@ describe(Composer.name, (): void => {
       );
     });
 
-    it('with layers, first providing new response, second expecting new response, unions with current response and allows second layer', (): void => {
+    it('with layers, first providing new response, second expecting new response, unions with current response and allows second layer', async (): Promise<void> => {
       const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
       // -- Layer
@@ -1579,7 +1579,7 @@ describe(Composer.name, (): void => {
 
       const layer1 = createLayerFunctionMock<Layer<any, any, any, NewOutputWithAuthentication>>();
 
-      layer1.mockImplementationOnce((input, next) => {
+      layer1.mockImplementationOnce(async (input, next) => {
         return next(input);
       });
 
@@ -1607,7 +1607,7 @@ describe(Composer.name, (): void => {
 
       const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-      terminus.mockReturnValueOnce(
+      terminus.mockResolvedValueOnce(
         output('o:test:status', {
           status: 123,
         })
@@ -1619,7 +1619,7 @@ describe(Composer.name, (): void => {
 
       expect(composition.layers.length).toStrictEqual(2);
 
-      const result = composition.invoke({
+      const result = await composition.invoke({
         id: 'test:id',
         name: 'test:name',
         random: 3,
@@ -1660,7 +1660,7 @@ describe(Composer.name, (): void => {
     });
 
     describe('for type only error cases', (): void => {
-      it('with terminus, expected input does not exist, raises build errors', (): void => {
+      it('with terminus, expected input does not exist, raises build errors', async (): Promise<void> => {
         const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
         // -- Terminus
@@ -1671,7 +1671,7 @@ describe(Composer.name, (): void => {
 
         const terminus = createTerminusFunctionMock<Terminus<ExpectInput, TestBaseOutput>>();
 
-        terminus.mockReturnValueOnce(
+        terminus.mockResolvedValueOnce(
           output('o:test:status', {
             status: 123,
           })
@@ -1686,7 +1686,7 @@ describe(Composer.name, (): void => {
 
         expect(composition.layers.length).toStrictEqual(0);
 
-        const result = composition.invoke({
+        const result = await composition.invoke({
           id: 'test:id',
           name: 'test:name',
           random: 3,
@@ -1706,7 +1706,7 @@ describe(Composer.name, (): void => {
         );
       });
 
-      it('with terminus, expected output does not exist, raises build errors', (): void => {
+      it('with terminus, expected output does not exist, raises build errors', async (): Promise<void> => {
         const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
         // -- Terminus
@@ -1717,7 +1717,7 @@ describe(Composer.name, (): void => {
 
         const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, NewOutputWithAuthentication>>();
 
-        terminus.mockReturnValueOnce(
+        terminus.mockResolvedValueOnce(
           output('o:test:authenticated', {
             authenticated: false,
           })
@@ -1732,7 +1732,7 @@ describe(Composer.name, (): void => {
 
         expect(composition.layers.length).toStrictEqual(0);
 
-        const result = composition.invoke({
+        const result = await composition.invoke({
           id: 'test:id',
           name: 'test:name',
           random: 3,
@@ -1752,7 +1752,7 @@ describe(Composer.name, (): void => {
         );
       });
 
-      it('with layer, expected input does not exist, raises build errors', (): void => {
+      it('with layer, expected input does not exist, raises build errors', async (): Promise<void> => {
         const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
         // -- Layer
@@ -1776,7 +1776,7 @@ describe(Composer.name, (): void => {
 
         const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-        terminus.mockReturnValueOnce(
+        terminus.mockResolvedValueOnce(
           output('o:test:status', {
             status: 123,
           })
@@ -1788,7 +1788,7 @@ describe(Composer.name, (): void => {
 
         expect(composition.layers.length).toStrictEqual(1);
 
-        const result = composition.invoke({
+        const result = await composition.invoke({
           id: 'test:id',
           name: 'test:name',
           random: 3,
@@ -1818,7 +1818,7 @@ describe(Composer.name, (): void => {
         );
       });
 
-      it('with layer, expected output does not exist, raises build errors', (): void => {
+      it('with layer, expected output does not exist, raises build errors', async (): Promise<void> => {
         const composer1 = Composer.create<TestBaseInput, TestBaseOutput>();
 
         // -- Layer
@@ -1842,7 +1842,7 @@ describe(Composer.name, (): void => {
 
         const terminus = createTerminusFunctionMock<Terminus<TestBaseInput, TestBaseOutput>>();
 
-        terminus.mockReturnValueOnce(
+        terminus.mockResolvedValueOnce(
           output('o:test:status', {
             status: 123,
           })
@@ -1854,7 +1854,7 @@ describe(Composer.name, (): void => {
 
         expect(composition.layers.length).toStrictEqual(1);
 
-        const result = composition.invoke({
+        const result = await composition.invoke({
           id: 'test:id',
           name: 'test:name',
           random: 3,

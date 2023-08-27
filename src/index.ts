@@ -55,12 +55,12 @@ export const output = <T extends OutputConstraint>(type: T['type'], value: T['va
 export type TerminusClass<
   GivenInput,
   GivenOutput extends OutputConstraint,
-> = ClassLike<Fn<GivenInput, GivenOutput>>;
+> = ClassLike<Fn<GivenInput, Promise<GivenOutput>>>;
 
 export type TerminusFunction<
   GivenInput,
   GivenOutput extends OutputConstraint,
-> = Fn<GivenInput, GivenOutput>;
+> = Fn<GivenInput, Promise<GivenOutput>>;
 
 export type Terminus<
   GivenInput,
@@ -84,7 +84,7 @@ export type MakeTerminusInput<T extends TerminusKind> = (
     : undefined
 );
 
-export type MakeTerminusOutput<T extends TerminusKind> = (
+export type MakeTerminusOutput<T extends TerminusKind> = Promise<(
   T extends Terminus<any, infer I>
     ? (
       Grok.If<
@@ -94,7 +94,7 @@ export type MakeTerminusOutput<T extends TerminusKind> = (
       >
     )
     : OutputConstraint
-);
+)>;
 
 // --
 // -- Layer
@@ -124,7 +124,7 @@ export type LayerFunction<
   CurrentOutput extends OutputConstraint,
   NewInput,
   NewOutput extends OutputConstraint,
-> = (input: CurrentInput & LayerEnforceNextInputPassThrough, next: Fn<NewInput & LayerEnforceNextInputPassThrough, NewOutput | LayerEnforceNextOutputPassThrough>) => CurrentOutput | LayerEnforceNextOutputPassThrough;
+> = (input: CurrentInput & LayerEnforceNextInputPassThrough, next: Fn<NewInput & LayerEnforceNextInputPassThrough, Promise<NewOutput | LayerEnforceNextOutputPassThrough>>) => Promise<CurrentOutput | LayerEnforceNextOutputPassThrough>;
 
 export type Layer<
   CurrentInput,
@@ -150,7 +150,7 @@ export type MakeLayerInput<T extends LayerKind> = (
     : LayerEnforceNextInputPassThrough
 );
 
-export type MakeLayerOutput<T extends LayerKind> = (
+export type MakeLayerOutput<T extends LayerKind> = Promise<(
   T extends Layer<any, infer I, any, any>
     ? (
       Grok.If<
@@ -160,7 +160,7 @@ export type MakeLayerOutput<T extends LayerKind> = (
       >
     )
     : LayerEnforceNextOutputPassThrough
-);
+)>;
 
 export type MakeLayerNext<T extends LayerKind> = (
   Fn<
@@ -175,7 +175,7 @@ export type MakeLayerNext<T extends LayerKind> = (
         )
         : LayerEnforceNextInputPassThrough
     ),
-    (
+    Promise<(
       T extends Layer<any, any, any, infer I>
         ? (
           Grok.If<
@@ -185,7 +185,7 @@ export type MakeLayerNext<T extends LayerKind> = (
           >
         )
         : LayerEnforceNextOutputPassThrough
-    )
+    )>
   >
 );
 
@@ -195,8 +195,8 @@ export type MakeLayerNext<T extends LayerKind> = (
 
 type LayerBuilderPassThrough = Fn<any, any>;
 
-type LayerInstrument = (thing: LayerKind | TerminusKind, next: Fn<any, any>) => Fn<any, any>;
-type LayerBuilderFunction<I, O> = (instrument?: LayerInstrument) => Fn<I, O>;
+type LayerInstrument = (thing: LayerKind | TerminusKind, next: Fn<any, any>) => Fn<any, Promise<any>>;
+type LayerBuilderFunction<I, O> = (instrument?: LayerInstrument) => Fn<I, Promise<O>>;
 
 export type ComposerComposition<
   GivenInput,
@@ -204,7 +204,7 @@ export type ComposerComposition<
 > = {
   readonly layers: LayerKind[];
   readonly build: LayerBuilderFunction<GivenInput, GivenOutput>;
-  readonly invoke: Fn<GivenInput, GivenOutput>;
+  readonly invoke: Fn<GivenInput, Promise<GivenOutput>>;
 };
 
 export const extractInvokableLayer = <
