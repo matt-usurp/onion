@@ -1,5 +1,5 @@
 import type { MockedFunction, MockedObject } from 'vitest';
-import type { ComposerConstraint, InputConstraint, Layer, OnionCore, Output, OutputConstraint, Terminus } from './index';
+import type { ComposerConstraint, InputConstraint, Layer, LayerConstraint, OnionCore, Output, OutputConstraint, Terminus } from './index';
 import { Composer, output } from './index';
 
 /* eslint-disable @typescript-eslint/ban-types */
@@ -33,26 +33,36 @@ const createTerminusFunctionMock = <
   return vi.fn() as MockedFunction<Terminus.Fn<GivenInput, GivenOutput>>;
 };
 
-const createLayerClassMock = <
-  GivenLayer extends Layer<CurrentInput, CurrentOutput, NewInput, NewOutput>,
-  CurrentInput extends InputConstraint = GivenLayer extends Layer<infer I, any, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
-  CurrentOutput extends OutputConstraint = GivenLayer extends Layer<any, infer I, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
-  NewInput extends InputConstraint = GivenLayer extends Layer<any, any, infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
-  NewOutput extends OutputConstraint = GivenLayer extends Layer<any, any, any, infer I> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
->(): MockedObject<Layer.Class<CurrentInput, CurrentOutput, NewInput, NewOutput>> => {
+const createLayerClassMock = <GivenLayer extends LayerConstraint>(): (
+/* eslint-disable @typescript-eslint/indent */
+  MockedObject<
+    Layer.Class<
+      GivenLayer extends Layer<infer I, any, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+      GivenLayer extends Layer<any, infer I, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+      GivenLayer extends Layer<any, any, infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+      GivenLayer extends Layer<any, any, any, infer I> ? I : never // eslint-disable-line @typescript-eslint/no-explicit-any
+    >
+  >
+/* eslint-enable @typescript-eslint/indent */
+) => {
   return {
     invoke: vi.fn(),
-  } as unknown as MockedObject<Layer.Class<CurrentInput, CurrentOutput, NewInput, NewOutput>>;
+  } as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 };
 
-const createLayerFunctionMock = <
-  GivenLayer extends Layer<CurrentInput, CurrentOutput, NewInput, NewOutput>,
-  CurrentInput extends InputConstraint = GivenLayer extends Layer<infer I, any, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
-  CurrentOutput extends OutputConstraint = GivenLayer extends Layer<any, infer I, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
-  NewInput extends InputConstraint = GivenLayer extends Layer<any, any, infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
-  NewOutput extends OutputConstraint = GivenLayer extends Layer<any, any, any, infer I> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
->(): MockedFunction<Layer.Fn<CurrentInput, CurrentOutput, NewInput, NewOutput>> => {
-  return vi.fn() as MockedFunction<Layer.Fn<CurrentInput, CurrentOutput, NewInput, NewOutput>>;
+const createLayerFunctionMock = <GivenLayer extends LayerConstraint>(): (
+/* eslint-disable @typescript-eslint/indent */
+  MockedFunction<
+    Layer.Fn<
+      GivenLayer extends Layer<infer I, any, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+      GivenLayer extends Layer<any, infer I, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+      GivenLayer extends Layer<any, any, infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+      GivenLayer extends Layer<any, any, any, infer I> ? I : never // eslint-disable-line @typescript-eslint/no-explicit-any
+    >
+  >
+/* eslint-enable @typescript-eslint/indent */
+) => {
+  return vi.fn() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
