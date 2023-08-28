@@ -1,5 +1,5 @@
 import type { MockedFunction, MockedObject } from 'vitest';
-import type { ComposerConstraint, Layer, OnionCore, Output, OutputConstraint, Terminus } from './index';
+import type { ComposerConstraint, InputConstraint, Layer, OnionCore, Output, OutputConstraint, Terminus } from './index';
 import { Composer, output } from './index';
 
 /* eslint-disable @typescript-eslint/ban-types */
@@ -17,7 +17,7 @@ export type TestBaseOutput = Output<'o:test:status', {
 
 const createTerminusClassMock = <
   GivenTerminus extends Terminus<GivenInput, GivenOutput>,
-  GivenInput = GivenTerminus extends Terminus<infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  GivenInput extends InputConstraint = GivenTerminus extends Terminus<infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
   GivenOutput extends OutputConstraint = GivenTerminus extends Terminus<any, infer I> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
 >(): MockedObject<Terminus.Class<GivenInput, GivenOutput>> => {
   return {
@@ -27,7 +27,7 @@ const createTerminusClassMock = <
 
 const createTerminusFunctionMock = <
   GivenTerminus extends Terminus<GivenInput, GivenOutput>,
-  GivenInput = GivenTerminus extends Terminus<infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  GivenInput extends InputConstraint = GivenTerminus extends Terminus<infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
   GivenOutput extends OutputConstraint = GivenTerminus extends Terminus<any, infer I> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
 >(): MockedFunction<Terminus.Fn<GivenInput, GivenOutput>> => {
   return vi.fn() as MockedFunction<Terminus.Fn<GivenInput, GivenOutput>>;
@@ -35,9 +35,9 @@ const createTerminusFunctionMock = <
 
 const createLayerClassMock = <
   GivenLayer extends Layer<CurrentInput, CurrentOutput, NewInput, NewOutput>,
-  CurrentInput = GivenLayer extends Layer<infer I, any, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  CurrentInput extends InputConstraint = GivenLayer extends Layer<infer I, any, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
   CurrentOutput extends OutputConstraint = GivenLayer extends Layer<any, infer I, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
-  NewInput = GivenLayer extends Layer<any, any, infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  NewInput extends InputConstraint = GivenLayer extends Layer<any, any, infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
   NewOutput extends OutputConstraint = GivenLayer extends Layer<any, any, any, infer I> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
 >(): MockedObject<Layer.Class<CurrentInput, CurrentOutput, NewInput, NewOutput>> => {
   return {
@@ -47,9 +47,9 @@ const createLayerClassMock = <
 
 const createLayerFunctionMock = <
   GivenLayer extends Layer<CurrentInput, CurrentOutput, NewInput, NewOutput>,
-  CurrentInput = GivenLayer extends Layer<infer I, any, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  CurrentInput extends InputConstraint = GivenLayer extends Layer<infer I, any, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
   CurrentOutput extends OutputConstraint = GivenLayer extends Layer<any, infer I, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
-  NewInput = GivenLayer extends Layer<any, any, infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  NewInput extends InputConstraint = GivenLayer extends Layer<any, any, infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
   NewOutput extends OutputConstraint = GivenLayer extends Layer<any, any, any, infer I> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
 >(): MockedFunction<Layer.Fn<CurrentInput, CurrentOutput, NewInput, NewOutput>> => {
   return vi.fn() as MockedFunction<Layer.Fn<CurrentInput, CurrentOutput, NewInput, NewOutput>>;

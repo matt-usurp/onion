@@ -36,6 +36,17 @@ export namespace OnionCore {
 }
 
 // --
+// -- Input
+// --
+
+/**
+ * A constraint type that can be used to accept types of input.
+ *
+ * Otherwise without an object as input you cannot make use of the {@link Layer} features.
+ */
+export type InputConstraint = Record<string, unknown>;
+
+// --
 // -- Output
 // --
 
@@ -85,7 +96,7 @@ export namespace OnionCore {
    * Take the {@link GivenInput} and provide a return of {@link GivenOutput}.
    */
   export type TerminusClassImplementation<
-    GivenInput,
+    GivenInput extends InputConstraint,
     GivenOutput extends OutputConstraint,
   > = (
   /* eslint-disable @typescript-eslint/indent */
@@ -104,7 +115,7 @@ export namespace OnionCore {
    * Take the {@link GivenInput} and provide a return of {@link GivenOutput}.
    */
   export type TerminusFunctionImplementation<
-    GivenInput,
+    GivenInput extends InputConstraint,
     GivenOutput extends OutputConstraint,
   > = Syntax.FunctionImplementation<GivenInput, Promise<GivenOutput>>;
 
@@ -124,7 +135,10 @@ export namespace OnionCore {
 /**
  * Take the {@link GivenInput} and provide a return of {@link GivenOutput}.
  */
-export type Terminus<GivenInput, GivenOutput extends OutputConstraint> = (
+export type Terminus<
+  GivenInput extends InputConstraint,
+  GivenOutput extends OutputConstraint,
+> = (
   | OnionCore.TerminusClassImplementation<GivenInput, GivenOutput>
   | OnionCore.TerminusFunctionImplementation<GivenInput, GivenOutput>
 );
@@ -171,9 +185,9 @@ export namespace OnionCore {
    * With the given {@link NewOutput} and ensure its compatible or transformed into {@link CurrentOutput}.
    */
   export type LayerClassImplementation<
-    CurrentInput,
+    CurrentInput extends InputConstraint,
     CurrentOutput extends OutputConstraint,
-    NewInput,
+    NewInput extends InputConstraint,
     NewOutput extends OutputConstraint,
   > = Syntax.ClassImplementation<LayerFunctionImplementation<CurrentInput, CurrentOutput, NewInput, NewOutput>>;
 
@@ -184,9 +198,9 @@ export namespace OnionCore {
    * With the given {@link NewOutput} and ensure its compatible or transformed into {@link CurrentOutput}.
    */
   export type LayerFunctionImplementation<
-    CurrentInput,
+    CurrentInput extends InputConstraint,
     CurrentOutput extends OutputConstraint,
-    NewInput,
+    NewInput extends InputConstraint,
     NewOutput extends OutputConstraint,
   > = (
     input: CurrentInput & LayerEnforceNextInputPassThrough,
@@ -256,9 +270,9 @@ export namespace OnionCore {
  * With the given {@link NewOutput} and ensure its compatible or transformed into {@link CurrentOutput}.
  */
 export type Layer<
-  CurrentInput,
+  CurrentInput extends InputConstraint,
   CurrentOutput extends OutputConstraint,
-  NewInput,
+  NewInput extends InputConstraint,
   NewOutput extends OutputConstraint,
 > = (
   | OnionCore.LayerClassImplementation<CurrentInput, CurrentOutput, NewInput, NewOutput>
@@ -294,7 +308,7 @@ export namespace OnionCore {
 }
 
 export type Composition<
-  GivenInput,
+  GivenInput extends InputConstraint,
   GivenOutput extends OutputConstraint,
 > = {
   readonly layers: LayerConstraint[];
@@ -313,7 +327,7 @@ export namespace Composition {
 
 export const createInvokableTerminusFunction = <
   GivenTerminus extends Terminus<GivenInput, GivenOutput>,
-  GivenInput = GivenTerminus extends Terminus<infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  GivenInput extends InputConstraint = GivenTerminus extends Terminus<infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
   GivenOutput extends OutputConstraint = GivenTerminus extends Terminus<any, infer I> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
 >(value: GivenTerminus): OnionCore.TerminusFunctionImplementation<GivenInput, GivenOutput> => {
   if ((value as OnionCore.TerminusClassImplementation<GivenInput, GivenOutput>).invoke !== undefined) {
@@ -325,9 +339,9 @@ export const createInvokableTerminusFunction = <
 
 export const createInvokableLayerFunction = <
   GivenLayer extends Layer<CurrentInput, CurrentOutput, NewInput, NewOutput>,
-  CurrentInput = GivenLayer extends Layer<infer I, any, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  CurrentInput extends InputConstraint = GivenLayer extends Layer<infer I, any, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
   CurrentOutput extends OutputConstraint = GivenLayer extends Layer<any, infer I, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
-  NewInput = GivenLayer extends Layer<any, any, infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
+  NewInput extends InputConstraint = GivenLayer extends Layer<any, any, infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
   NewOutput extends OutputConstraint = GivenLayer extends Layer<any, any, any, infer I> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
 >(value: GivenLayer): OnionCore.LayerFunctionImplementation<CurrentInput, CurrentOutput, NewInput, NewOutput> => {
   if ((value as OnionCore.LayerClassImplementation<CurrentInput, CurrentOutput, NewInput, NewOutput>).invoke !== undefined) {
@@ -341,9 +355,9 @@ export const createInvokableLayerFunction = <
  * Compose an onion function (the {@link Terminus}) with given {@link Layer Layers}.
  */
 export class Composer<
-  CurrentInput,
+  CurrentInput extends InputConstraint,
   CurrentOutput extends OutputConstraint,
-  InitialInput,
+  InitialInput extends InputConstraint,
   InitialOutput extends OutputConstraint,
 > {
   protected readonly layers: Layer<any, any, any, any>[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -352,7 +366,7 @@ export class Composer<
    * Create an instance of {@link Composer} with {@link InitialInput} and {@link InitialOutput}.
    */
   public static create<
-    InitialInput,
+    InitialInput extends InputConstraint,
     InitialOutput extends OutputConstraint,
   >(): Composer<InitialInput, InitialOutput, InitialInput, InitialOutput> {
     return new this();
