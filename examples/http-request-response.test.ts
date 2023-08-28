@@ -66,7 +66,7 @@ class TestDecodeRequest<T> implements TestDecodeRequestLayer<T> {
  * New "better" response, our {@link TestBetterResponse} will allow this to be provided by future calls in the stack.
  * Here we make use of the generic {@link T} to enforce a structured response which the layer will convert to JSON for us.
  */
-type TestResponseBetter<T> = Output<'http:decoded', {
+type TestResponseBetter<T> = Output<'http:better', {
   readonly status: number;
   readonly body: T;
 }>;
@@ -89,7 +89,7 @@ class TestBetterResponse<T> implements TestBetterResponseLayer<T> {
   ): Layer.Output<TestBetterResponseLayer<T>> {
     const response = await next(input);
 
-    if (response.type === 'http:decoded') {
+    if (response.type === 'http:better') {
       return output<TestInitialResponse>('http', {
         status: response.value.status,
         body: JSON.stringify(response.value.body),
@@ -132,7 +132,7 @@ class TestRequestHandler implements TestRequestHandlerTerminus {
    * {@inheritdoc}
    */
   public async invoke(input: Terminus.Input<TestRequestHandlerTerminus>): Terminus.Output<TestRequestHandlerTerminus> {
-    return output<TestResponseBetter<TestResponseData>>('http:decoded', {
+    return output<TestResponseBetter<TestResponseData>>('http:better', {
       status: 1,
 
       body: {
