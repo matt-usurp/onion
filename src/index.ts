@@ -20,6 +20,19 @@ export namespace OnionCore {
      */
     export type ClassImplementation<Fn> = { invoke: Fn };
   }
+
+  /**
+   * Determine if the {@link Value} can be used.
+   */
+  export type Cleanse<Value, Falsey, Truthy> = (
+  /* eslint-disable @typescript-eslint/indent */
+    Grok.If<
+      Grok.Value.IsAny<Value>,
+      Falsey,
+      Truthy
+    >
+  /* eslint-enable @typescript-eslint/indent */
+  );
 }
 
 // --
@@ -97,13 +110,13 @@ export namespace OnionCore {
 
   export type MakeTerminusInput<T extends TerminusConstraint> = (
     T extends Terminus<infer I, any> // eslint-disable-line @typescript-eslint/no-explicit-any
-      ? Grok.If<Grok.Value.IsAny<I>, undefined, I>
+      ? Cleanse<I, undefined, I>
       : undefined
   );
 
   export type MakeTerminusOutput<T extends TerminusConstraint> = Promise<(
     T extends Terminus<any, infer I> // eslint-disable-line @typescript-eslint/no-explicit-any
-      ? Grok.If<Grok.Value.IsAny<I>, OutputConstraint, I>
+      ? Cleanse<I, OutputConstraint, I>
       : OutputConstraint
   )>;
 }
@@ -184,8 +197,8 @@ export namespace OnionCore {
     T extends Layer<infer I, any, any, any> // eslint-disable-line @typescript-eslint/no-explicit-any
       ? (
       /* eslint-disable @typescript-eslint/indent */
-        Grok.If<
-          Grok.Value.IsAny<I>,
+        Cleanse<
+          I,
           LayerEnforceNextInputPassThrough,
           I & LayerEnforceNextInputPassThrough
         >
@@ -198,8 +211,8 @@ export namespace OnionCore {
     T extends Layer<any, infer I, any, any> // eslint-disable-line @typescript-eslint/no-explicit-any
       ? (
       /* eslint-disable @typescript-eslint/indent */
-        Grok.If<
-          Grok.Value.IsAny<I>,
+        Cleanse<
+          I,
           LayerEnforceNextOutputPassThrough,
           I | LayerEnforceNextOutputPassThrough
         >
@@ -214,8 +227,8 @@ export namespace OnionCore {
       (
         T extends Layer<any, any, infer I, any> // eslint-disable-line @typescript-eslint/no-explicit-any
           ? (
-            Grok.If<
-              Grok.Value.IsAny<I>,
+            Cleanse<
+              I,
               LayerEnforceNextInputPassThrough,
               I & LayerEnforceNextInputPassThrough
             >
@@ -225,8 +238,8 @@ export namespace OnionCore {
       Promise<(
         T extends Layer<any, any, any, infer I> // eslint-disable-line @typescript-eslint/no-explicit-any
           ? (
-            Grok.If<
-              Grok.Value.IsAny<I>,
+            Cleanse<
+              I,
               LayerEnforceNextOutputPassThrough,
               I | LayerEnforceNextOutputPassThrough
             >
@@ -363,8 +376,8 @@ export class Composer<
       (
         GivenLayer extends Layer<any, any, infer I, any> // eslint-disable-line @typescript-eslint/no-explicit-any
         ? (
-          Grok.If<
-            Grok.Value.IsAny<I>,
+          OnionCore.Cleanse<
+            I,
             CurrentInput,
             Grok.Merge<CurrentInput, I>
           >
@@ -374,8 +387,8 @@ export class Composer<
       (
         GivenLayer extends Layer<any, any, any, infer I> // eslint-disable-line @typescript-eslint/no-explicit-any
         ? (
-          Grok.If<
-            Grok.Value.IsAny<I>,
+          OnionCore.Cleanse<
+            I,
             Exclude<CurrentOutput, OnionCore.LayerEnforceNextOutputPassThrough>,
             Grok.Union<CurrentOutput, Exclude<I, OnionCore.LayerEnforceNextOutputPassThrough>>
           >

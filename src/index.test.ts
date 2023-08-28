@@ -1,5 +1,5 @@
 import type { MockedFunction, MockedObject } from 'vitest';
-import type { ComposerConstraint, Layer, Output, OutputConstraint, Terminus } from './index';
+import type { ComposerConstraint, Layer, OnionCore, Output, OutputConstraint, Terminus } from './index';
 import { Composer, output } from './index';
 
 /* eslint-disable @typescript-eslint/ban-types */
@@ -63,13 +63,13 @@ const assertOutputType = <T extends X, X>() => { };
 
 type InferComposerCurrentInput<T extends ComposerConstraint> = (
   T extends Composer<infer I, any, any, any> // eslint-disable-line @typescript-eslint/no-explicit-any
-    ? I
+    ? OnionCore.Cleanse<I, never, I>
     : never
 );
 
 type InferComposerCurrentOutput<T extends ComposerConstraint> = (
   T extends Composer<any, infer I, any, any> // eslint-disable-line @typescript-eslint/no-explicit-any
-    ? I
+    ? OnionCore.Cleanse<I, never, I>
     : never
 );
 
