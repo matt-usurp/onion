@@ -37,7 +37,7 @@ type TestRequestDecoded<T> = {
  * We make use of {@link LayerClass} to define an interface we can extend.
  * This is done to lessen the code duplication as we need this a few more times.
  */
-type TestDecodeRequestLayer<T> = Layer.Class<TestInitialRequest, any, TestRequestDecoded<T>, any>;
+type TestDecodeRequestLayer<T> = Layer.With.ExpectingInput<TestInitialRequest, Layer.With.ProvidingInput<TestRequestDecoded<T>>>;
 
 /**
  * Our layer implementation.

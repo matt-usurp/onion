@@ -191,6 +191,17 @@ export namespace OnionCore {
     NewOutput extends OutputConstraint,
   > = Syntax.ClassImplementation<LayerFunctionImplementation<CurrentInput, CurrentOutput, NewInput, NewOutput>>;
 
+  export type LayerClassImplementationConstraint = (
+  /* eslint-disable @typescript-eslint/indent */
+    LayerClassImplementation<
+      any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      any // eslint-disable-line @typescript-eslint/no-explicit-any
+    >
+  /* eslint-enable @typescript-eslint/indent */
+  );
+
   /**
    * A layer implementation using the functional style syntax.
    *
@@ -206,6 +217,107 @@ export namespace OnionCore {
     input: CurrentInput & LayerEnforceNextInputPassThrough,
     next: Syntax.FunctionImplementation<NewInput & LayerEnforceNextInputPassThrough, Promise<NewOutput | LayerEnforceNextOutputPassThrough>>,
   ) => Promise<CurrentOutput | LayerEnforceNextOutputPassThrough>;
+
+  export type LayerFunctionImplementationConstraint = (
+  /* eslint-disable @typescript-eslint/indent */
+    LayerFunctionImplementation<
+      any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      any // eslint-disable-line @typescript-eslint/no-explicit-any
+    >
+  /* eslint-enable @typescript-eslint/indent */
+  );
+
+  export type InferLayerCurrentInput<
+    GivenLayer extends LayerConstraint,
+    Fallback = never,
+  > = (
+    GivenLayer extends Layer<infer Inferred, any, any, any> // eslint-disable-line @typescript-eslint/no-explicit-any
+      ? Cleanse<Inferred, Fallback, Inferred>
+      : Fallback
+  );
+
+  export type InferLayerCurrentOutput<
+    GivenLayer extends LayerConstraint,
+    Fallback = never,
+  > = (
+    GivenLayer extends Layer<any, infer Inferred, any, any> // eslint-disable-line @typescript-eslint/no-explicit-any
+      ? Cleanse<Inferred, Fallback, Inferred>
+      : Fallback
+  );
+
+  export type InferLayerNewInput<
+    GivenLayer extends LayerConstraint,
+    Fallback = never,
+  > = (
+    GivenLayer extends Layer<any, any, infer Inferred, any> // eslint-disable-line @typescript-eslint/no-explicit-any
+      ? Cleanse<Inferred, Fallback, Inferred>
+      : Fallback
+  );
+
+  export type InferLayerNewOutput<
+    GivenLayer extends LayerConstraint,
+    Fallback = never,
+  > = (
+    GivenLayer extends Layer<any, any, any, infer Inferred> // eslint-disable-line @typescript-eslint/no-explicit-any
+      ? Cleanse<Inferred, Fallback, Inferred>
+      : Fallback
+  );
+
+  export type ExtendingLayer<
+    GivenLayer extends LayerConstraint,
+    CurrentInput extends InputConstraint,
+    CurrentOutput extends OutputConstraint,
+    NewInput extends InputConstraint,
+    NewOutput extends OutputConstraint,
+  > = (
+  /* eslint-disable @typescript-eslint/indent */
+    Grok.If<
+      Grok.And<[
+        Grok.Value.IsExtending<LayerClassImplementationConstraint, GivenLayer>,
+        Grok.Value.IsExtending<LayerFunctionImplementationConstraint, GivenLayer>,
+      ]>,
+      Layer<
+        Grok.If.IsAny<CurrentInput, InferLayerCurrentInput<GivenLayer, any>, CurrentInput>, // eslint-disable-line @typescript-eslint/no-explicit-any
+        Grok.If.IsAny<CurrentOutput, InferLayerCurrentOutput<GivenLayer, any>, CurrentOutput>, // eslint-disable-line @typescript-eslint/no-explicit-any
+        Grok.If.IsAny<NewInput, InferLayerNewInput<GivenLayer, any>, NewInput>, // eslint-disable-line @typescript-eslint/no-explicit-any
+        Grok.If.IsAny<NewOutput, InferLayerNewOutput<GivenLayer, any>, NewOutput> // eslint-disable-line @typescript-eslint/no-explicit-any
+      >,
+      Grok.If<
+        Grok.Value.IsExtending<GivenLayer, LayerClassImplementationConstraint>, // eslint-disable-line @typescript-eslint/no-explicit-any
+        LayerClassImplementation<
+          Grok.If.IsAny<CurrentInput, InferLayerCurrentInput<GivenLayer, any>, CurrentInput>, // eslint-disable-line @typescript-eslint/no-explicit-any
+          Grok.If.IsAny<CurrentOutput, InferLayerCurrentOutput<GivenLayer, any>, CurrentOutput>, // eslint-disable-line @typescript-eslint/no-explicit-any
+          Grok.If.IsAny<NewInput, InferLayerNewInput<GivenLayer, any>, NewInput>, // eslint-disable-line @typescript-eslint/no-explicit-any
+          Grok.If.IsAny<NewOutput, InferLayerNewOutput<GivenLayer, any>, NewOutput> // eslint-disable-line @typescript-eslint/no-explicit-any
+        >,
+        LayerFunctionImplementation<
+          Grok.If.IsAny<CurrentInput, InferLayerCurrentInput<GivenLayer, any>, CurrentInput>, // eslint-disable-line @typescript-eslint/no-explicit-any
+          Grok.If.IsAny<CurrentOutput, InferLayerCurrentOutput<GivenLayer, any>, CurrentOutput>, // eslint-disable-line @typescript-eslint/no-explicit-any
+          Grok.If.IsAny<NewInput, InferLayerNewInput<GivenLayer, any>, NewInput>, // eslint-disable-line @typescript-eslint/no-explicit-any
+          Grok.If.IsAny<NewOutput, InferLayerNewOutput<GivenLayer, any>, NewOutput> // eslint-disable-line @typescript-eslint/no-explicit-any
+        >
+      >
+    >
+  /* eslint-enable @typescript-eslint/indent */
+  );
+
+  export type WithLayerExpectingCurrentInput<
+    CurrentInput extends InputConstraint,
+    GivenLayer extends LayerConstraint = LayerConstraint,
+  > = ExtendingLayer<GivenLayer, CurrentInput, any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+  export type WithLayerProvidingNewInput<
+    NewInput extends InputConstraint,
+    GivenLayer extends LayerConstraint = LayerConstraint,
+  > = ExtendingLayer<GivenLayer, any, any, NewInput, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+  export type WithLayerProvidingNewOutput<
+    CurrentOutput extends OutputConstraint,
+    NewOutput extends OutputConstraint,
+    GivenLayer extends LayerConstraint = LayerConstraint,
+  > = ExtendingLayer<GivenLayer, any, CurrentOutput, any, NewOutput>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
   export type MakeLayerInput<T extends LayerConstraint> = (
     T extends Layer<infer I, any, any, any> // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -287,6 +399,12 @@ export namespace Layer {
   export import Input = OnionCore.MakeLayerInput;
   export import Output = OnionCore.MakeLayerOutput;
   export import Next = OnionCore.MakeLayerNext;
+
+  export namespace With {
+    export import ExpectingInput = OnionCore.WithLayerExpectingCurrentInput;
+    export import ProvidingInput = OnionCore.WithLayerProvidingNewInput;
+    export import ProvidingResponse = OnionCore.WithLayerProvidingNewOutput;
+  }
 }
 
 /**
