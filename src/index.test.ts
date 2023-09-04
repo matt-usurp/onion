@@ -1,7 +1,7 @@
 import type { Grok } from '@matt-usurp/grok';
 import type { MockedFunction, MockedObject } from 'vitest';
-import type { ComposerConstraint, InputConstraint, Layer, LayerConstraint, OnionCore, Output, OutputConstraint, Terminus } from './index';
-import { Composer, output } from './index';
+import type { ComposerConstraint, Layer, LayerConstraint, OnionCore, Output, OutputConstraint, Terminus, TerminusConstraint } from './index';
+import { Composer, isOutputType, output } from './index';
 
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -16,54 +16,24 @@ export type TestBaseOutput = Output<'o:test:status', {
   readonly status: number;
 }>;
 
-const createTerminusClassMock = <
-  GivenTerminus extends Terminus<GivenInput, GivenOutput>,
-  GivenInput extends InputConstraint = GivenTerminus extends Terminus<infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
-  GivenOutput extends OutputConstraint = GivenTerminus extends Terminus<any, infer I> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
->(): MockedObject<Terminus.Class<GivenInput, GivenOutput>> => {
+const createTerminusClassMock = <GivenTerminus extends TerminusConstraint>(): MockedObject<Terminus.Class<GivenTerminus>> => {
   return {
     invoke: vi.fn(),
-  } as unknown as MockedObject<Terminus.Class<GivenInput, GivenOutput>>;
+  } as unknown as MockedObject<Terminus.Class<GivenTerminus>>;
 };
 
-const createTerminusFunctionMock = <
-  GivenTerminus extends Terminus<GivenInput, GivenOutput>,
-  GivenInput extends InputConstraint = GivenTerminus extends Terminus<infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
-  GivenOutput extends OutputConstraint = GivenTerminus extends Terminus<any, infer I> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
->(): MockedFunction<Terminus.Fn<GivenInput, GivenOutput>> => {
-  return vi.fn() as MockedFunction<Terminus.Fn<GivenInput, GivenOutput>>;
+const createTerminusFunctionMock = <GivenTerminus extends TerminusConstraint>(): MockedFunction<Terminus.Fn<GivenTerminus>> => {
+  return vi.fn() as MockedFunction<Terminus.Fn<GivenTerminus>>;
 };
 
-const createLayerClassMock = <GivenLayer extends LayerConstraint>(): (
-/* eslint-disable @typescript-eslint/indent */
-  MockedObject<
-    Layer.Class<
-      GivenLayer extends Layer<infer I, any, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
-      GivenLayer extends Layer<any, infer I, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
-      GivenLayer extends Layer<any, any, infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
-      GivenLayer extends Layer<any, any, any, infer I> ? I : never // eslint-disable-line @typescript-eslint/no-explicit-any
-    >
-  >
-/* eslint-enable @typescript-eslint/indent */
-) => {
+const createLayerClassMock = <GivenLayer extends LayerConstraint>(): MockedObject<Layer.Class<GivenLayer>> => {
   return {
     invoke: vi.fn(),
-  } as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  } as MockedObject<Layer.Class<GivenLayer>>;
 };
 
-const createLayerFunctionMock = <GivenLayer extends LayerConstraint>(): (
-/* eslint-disable @typescript-eslint/indent */
-  MockedFunction<
-    Layer.Fn<
-      GivenLayer extends Layer<infer I, any, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
-      GivenLayer extends Layer<any, infer I, any, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
-      GivenLayer extends Layer<any, any, infer I, any> ? I : never, // eslint-disable-line @typescript-eslint/no-explicit-any
-      GivenLayer extends Layer<any, any, any, infer I> ? I : never // eslint-disable-line @typescript-eslint/no-explicit-any
-    >
-  >
-/* eslint-enable @typescript-eslint/indent */
-) => {
-  return vi.fn() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+const createLayerFunctionMock = <GivenLayer extends LayerConstraint>(): MockedFunction<Layer.Fn<GivenLayer>> => {
+  return vi.fn() as MockedFunction<Layer.Fn<GivenLayer>>;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -90,8 +60,6 @@ const typeIsExtending = <A, B>(): Grok.Value.IsExtending<A, B> => undefined as a
  */
 const typeIsExtendingReverse = <A, B>(): Grok.Value.IsExtending<B, A> => undefined as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-type WithoutPromise<T> = T extends Promise<infer Inferred> ? Inferred : T;
-
 type InferComposerCurrentInput<T extends ComposerConstraint> = (
   T extends Composer<infer I, any, any, any> // eslint-disable-line @typescript-eslint/no-explicit-any
     ? OnionCore.Cleanse<I, never, I>
@@ -116,7 +84,8 @@ describe('type, OnionCore', (): void => {
 
   describe('type, LayerFunctionImplementation', (): void => {
     it('with', (): void => {
-      type Expect = OnionCore.LayerFunctionImplementation<TestBaseInput, TestBaseOutput, NewInputWithAuthentication, NewOutputWithAuthentication>;
+      type Definition = Layer<TestBaseInput, TestBaseOutput, NewInputWithAuthentication, NewOutputWithAuthentication>;
+      type Expect = OnionCore.LayerFunctionImplementation<Definition>;
       type ExpectNext = Parameters<Expect>[1];
 
       ensure(typeIsExtending<Parameters<Expect>[0], OnionCore.LayerEnforceNextInputPassThrough>());
@@ -124,9 +93,9 @@ describe('type, OnionCore', (): void => {
       ensure(typeIsExtending<Parameters<Expect>[0], TestBaseInput>());
       //     ^?
 
-      ensure(typeIsExtendingReverse<WithoutPromise<ReturnType<Expect>>, OnionCore.LayerEnforceNextOutputPassThrough>());
+      ensure(typeIsExtendingReverse<Awaited<ReturnType<Expect>>, OnionCore.LayerEnforceNextOutputPassThrough>());
       //     ^?
-      ensure(typeIsExtendingReverse<WithoutPromise<ReturnType<Expect>>, TestBaseOutput>());
+      ensure(typeIsExtendingReverse<Awaited<ReturnType<Expect>>, TestBaseOutput>());
       //     ^?
 
       ensure(typeIsExtending<Parameters<ExpectNext>[0], OnionCore.LayerEnforceNextInputPassThrough>());
@@ -134,17 +103,17 @@ describe('type, OnionCore', (): void => {
       ensure(typeIsExtending<Parameters<ExpectNext>[0], NewInputWithAuthentication>());
       //     ^?
 
-      ensure(typeIsExtendingReverse<WithoutPromise<ReturnType<ExpectNext>>, OnionCore.LayerEnforceNextOutputPassThrough>());
+      ensure(typeIsExtendingReverse<Awaited<ReturnType<ExpectNext>>, OnionCore.LayerEnforceNextOutputPassThrough>());
       //     ^?
-      ensure(typeIsExtendingReverse<WithoutPromise<ReturnType<ExpectNext>>, NewOutputWithAuthentication>());
+      ensure(typeIsExtendingReverse<Awaited<ReturnType<ExpectNext>>, NewOutputWithAuthentication>());
       //     ^?
     });
   });
 
-  describe('type, InferLayerCurrentInput', (): void => {
+  describe('type, GetLayerDefinitionCurrentInput', (): void => {
     it('with layer, infers input, with any, fallback never', (): void => {
-      type Value = Layer<any, any, any, any>;
-      type Expect = OnionCore.InferLayerCurrentInput<Value>;
+      type Definition = Layer<any, any, any, any>;
+      type Expect = OnionCore.GetLayerDefinitionCurrentInput<Definition>;
       //   ^?
 
       ensure(typeIsExactly<Expect, never>());
@@ -153,7 +122,7 @@ describe('type, OnionCore', (): void => {
 
     it('with layer, infers input, with any, fallback defined', (): void => {
       type Value = Layer<any, any, any, any>;
-      type Expect = OnionCore.InferLayerCurrentInput<Value, 1>;
+      type Expect = OnionCore.GetLayerDefinitionCurrentInput<Value, 1>;
       //   ^?
 
       ensure(typeIsExactly<Expect, 1>());
@@ -162,7 +131,7 @@ describe('type, OnionCore', (): void => {
 
     it('with layer, infers input, with any, fallback defined', (): void => {
       type Value = Layer<TestBaseInput, any, any, any>;
-      type Expect = OnionCore.InferLayerCurrentInput<Value>;
+      type Expect = OnionCore.GetLayerDefinitionCurrentInput<Value>;
       //   ^?
 
       ensure(typeIsExactly<Expect, TestBaseInput>());
@@ -170,10 +139,10 @@ describe('type, OnionCore', (): void => {
     });
   });
 
-  describe('type, InferLayerCurrentOutput', (): void => {
+  describe('type, GetLayerDefinitionCurrentOutput', (): void => {
     it('with layer, infers input, with any, fallback never', (): void => {
       type Value = Layer<any, any, any, any>;
-      type Expect = OnionCore.InferLayerCurrentOutput<Value>;
+      type Expect = OnionCore.GetLayerDefinitionCurrentOutput<Value>;
       //   ^?
 
       ensure(typeIsExactly<Expect, never>());
@@ -182,7 +151,7 @@ describe('type, OnionCore', (): void => {
 
     it('with layer, infers input, with any, fallback defined', (): void => {
       type Value = Layer<any, any, any, any>;
-      type Expect = OnionCore.InferLayerCurrentOutput<Value, 1>;
+      type Expect = OnionCore.GetLayerDefinitionCurrentOutput<Value, 1>;
       //   ^?
 
       ensure(typeIsExactly<Expect, 1>());
@@ -191,7 +160,7 @@ describe('type, OnionCore', (): void => {
 
     it('with layer, infers input, with any, fallback defined', (): void => {
       type Value = Layer<any, TestBaseOutput, any, any>;
-      type Expect = OnionCore.InferLayerCurrentOutput<Value>;
+      type Expect = OnionCore.GetLayerDefinitionCurrentOutput<Value>;
       //   ^?
 
       ensure(typeIsExactly<Expect, TestBaseOutput>());
@@ -199,10 +168,10 @@ describe('type, OnionCore', (): void => {
     });
   });
 
-  describe('type, InferLayerNewInput', (): void => {
+  describe('type, GetLayerDefinitionNewInput', (): void => {
     it('with layer, infers input, with any, fallback never', (): void => {
       type Value = Layer<any, any, any, any>;
-      type Expect = OnionCore.InferLayerNewInput<Value>;
+      type Expect = OnionCore.GetLayerDefinitionNewInput<Value>;
       //   ^?
 
       ensure(typeIsExactly<Expect, never>());
@@ -211,7 +180,7 @@ describe('type, OnionCore', (): void => {
 
     it('with layer, infers input, with any, fallback defined', (): void => {
       type Value = Layer<any, any, any, any>;
-      type Expect = OnionCore.InferLayerNewInput<Value, 1>;
+      type Expect = OnionCore.GetLayerDefinitionNewInput<Value, 1>;
       //   ^?
 
       ensure(typeIsExactly<Expect, 1>());
@@ -220,7 +189,7 @@ describe('type, OnionCore', (): void => {
 
     it('with layer, infers input, with any, fallback defined', (): void => {
       type Value = Layer<any, any, TestBaseInput, any>;
-      type Expect = OnionCore.InferLayerNewInput<Value>;
+      type Expect = OnionCore.GetLayerDefinitionNewInput<Value>;
       //   ^?
 
       ensure(typeIsExactly<Expect, TestBaseInput>());
@@ -228,10 +197,10 @@ describe('type, OnionCore', (): void => {
     });
   });
 
-  describe('type, InferLayerNewOutput', (): void => {
+  describe('type, GetLayerDefinitionNewOutput', (): void => {
     it('with layer, infers input, with any, fallback never', (): void => {
       type Value = Layer<any, any, any, any>;
-      type Expect = OnionCore.InferLayerNewOutput<Value>;
+      type Expect = OnionCore.GetLayerDefinitionNewOutput<Value>;
       //   ^?
 
       ensure(typeIsExactly<Expect, never>());
@@ -240,7 +209,7 @@ describe('type, OnionCore', (): void => {
 
     it('with layer, infers input, with any, fallback defined', (): void => {
       type Value = Layer<any, any, any, any>;
-      type Expect = OnionCore.InferLayerNewOutput<Value, 1>;
+      type Expect = OnionCore.GetLayerDefinitionNewOutput<Value, 1>;
       //   ^?
 
       ensure(typeIsExactly<Expect, 1>());
@@ -249,7 +218,7 @@ describe('type, OnionCore', (): void => {
 
     it('with layer, infers input, with any, fallback defined', (): void => {
       type Value = Layer<any, any, any, TestBaseOutput>;
-      type Expect = OnionCore.InferLayerNewOutput<Value>;
+      type Expect = OnionCore.GetLayerDefinitionNewOutput<Value>;
       //   ^?
 
       ensure(typeIsExactly<Expect, TestBaseOutput>());
@@ -259,160 +228,122 @@ describe('type, OnionCore', (): void => {
 
   describe('type, WithLayerExpectingCurrentInput', (): void => {
     it('with no layer, creates with current input', (): void => {
-      type Value = OnionCore.WithLayerExpectingCurrentInput<{ id: string }>;
+      type Value = OnionCore.WithLayerDefinitionExpectingCurrentInput<{ id: string }>;
 
-      ensure(typeIsExactly<OnionCore.InferLayerCurrentInput<Value>, { id: string }>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentInput<Value>, { id: string }>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerCurrentOutput<Value>, never>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentOutput<Value>, never>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerNewInput<Value>, never>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewInput<Value>, never>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerNewOutput<Value>, never>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewOutput<Value>, never>());
       //     ^?
     });
 
     it('with layer, replaces current input only', (): void => {
       type Fixture = Layer<{ name: string }, TestBaseOutput, { age: number }, TestBaseOutput>;
-      type Value = OnionCore.WithLayerExpectingCurrentInput<{ id: string }, Fixture>;
+      type Value = OnionCore.WithLayerDefinitionExpectingCurrentInput<{ id: string }, Fixture>;
 
-      ensure(typeIsExactly<OnionCore.InferLayerCurrentInput<Value>, { id: string }>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentInput<Value>, { id: string }>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerCurrentOutput<Value>, TestBaseOutput>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentOutput<Value>, TestBaseOutput>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerNewInput<Value>, { age: number }>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewInput<Value>, { age: number }>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerNewOutput<Value>, TestBaseOutput>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewOutput<Value>, TestBaseOutput>());
       //     ^?
     });
   });
 
   describe('type, WithLayerProvidingNewInput', (): void => {
     it('with no layer, creates with new input', (): void => {
-      type Value = OnionCore.WithLayerProvidingNewInput<{ id: string }>;
+      type Value = OnionCore.WithLayerDefinitionProvidingNewInput<{ id: string }>;
 
-      ensure(typeIsExactly<OnionCore.InferLayerCurrentInput<Value>, never>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentInput<Value>, never>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerCurrentOutput<Value>, never>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentOutput<Value>, never>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerNewInput<Value>, { id: string }>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewInput<Value>, { id: string }>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerNewOutput<Value>, never>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewOutput<Value>, never>());
       //     ^?
     });
 
     it('with layer, replaces new input only', (): void => {
       type Fixture = Layer<{ name: string }, TestBaseOutput, { age: number }, TestBaseOutput>;
-      type Value = OnionCore.WithLayerProvidingNewInput<{ id: string }, Fixture>;
+      type Value = OnionCore.WithLayerDefinitionProvidingNewInput<{ id: string }, Fixture>;
 
-      ensure(typeIsExactly<OnionCore.InferLayerCurrentInput<Value>, { name: string }>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentInput<Value>, { name: string }>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerCurrentOutput<Value>, TestBaseOutput>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentOutput<Value>, TestBaseOutput>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerNewInput<Value>, { id: string }>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewInput<Value>, { id: string }>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerNewOutput<Value>, TestBaseOutput>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewOutput<Value>, TestBaseOutput>());
       //     ^?
     });
   });
 
   describe('type, WithLayerProvidingNewOutput', (): void => {
     it('with no layer, creates with current output and new output', (): void => {
-      type Value = OnionCore.WithLayerProvidingNewOutput<TestBaseOutput, NewOutputWithAuthentication>;
+      type Value = OnionCore.WithLayerDefinitionProvidingNewOutput<TestBaseOutput, NewOutputWithAuthentication>;
 
-      ensure(typeIsExactly<OnionCore.InferLayerCurrentInput<Value>, never>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentInput<Value>, never>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerCurrentOutput<Value>, TestBaseOutput>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentOutput<Value>, TestBaseOutput>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerNewInput<Value>, never>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewInput<Value>, never>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerNewOutput<Value>, NewOutputWithAuthentication>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewOutput<Value>, NewOutputWithAuthentication>());
       //     ^?
     });
 
     it('with layer, replaces current output and new output only', (): void => {
       type Fixture = Layer<{ name: string }, TestBaseOutput, { age: number }, TestBaseOutput>;
-      type Value = OnionCore.WithLayerProvidingNewOutput<TestBaseOutput, NewOutputWithAuthentication, Fixture>;
+      type Value = OnionCore.WithLayerDefinitionProvidingNewOutput<TestBaseOutput, NewOutputWithAuthentication, Fixture>;
 
-      ensure(typeIsExactly<OnionCore.InferLayerCurrentInput<Value>, { name: string }>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentInput<Value>, { name: string }>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerCurrentOutput<Value>, TestBaseOutput>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentOutput<Value>, TestBaseOutput>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerNewInput<Value>, { age: number }>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewInput<Value>, { age: number }>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerNewOutput<Value>, NewOutputWithAuthentication>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewOutput<Value>, NewOutputWithAuthentication>());
       //     ^?
     });
 
     it('without layer, composable with multiple builders', (): void => {
-      type Previous = OnionCore.WithLayerProvidingNewOutput<TestBaseOutput, NewOutputWithAuthentication>;
-      type Value = OnionCore.WithLayerProvidingNewInput<{ age: number }, Previous>;
+      type Previous = OnionCore.WithLayerDefinitionProvidingNewOutput<TestBaseOutput, NewOutputWithAuthentication>;
+      type Value = OnionCore.WithLayerDefinitionProvidingNewInput<{ age: number }, Previous>;
 
-      ensure(typeIsExactly<OnionCore.InferLayerCurrentInput<Value>, never>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentInput<Value>, never>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerCurrentOutput<Value>, TestBaseOutput>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentOutput<Value>, TestBaseOutput>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerNewInput<Value>, { age: number }>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewInput<Value>, { age: number }>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.InferLayerNewOutput<Value>, NewOutputWithAuthentication>());
-      //     ^?
-    });
-  });
-
-  describe('type, ExtendingLayer', (): void => {
-    it('with abstract syntax, changes current input, returns abstract syntax', (): void => {
-      type Previous = Layer<TestBaseInput, TestBaseOutput, TestBaseInput, TestBaseOutput>;
-      type Value = OnionCore.ExtendingLayer<Previous, NewInputWithAuthentication, any, any, any>;
-
-      ensure(typeIsExtending<Value, LayerConstraint>());
-      //     ^?
-
-      ensure(typeIsExtendingReverse<Value, OnionCore.LayerFunctionImplementationConstraint>());
-      //     ^?
-
-      ensure(typeIsExtendingReverse<Value, OnionCore.LayerClassImplementationConstraint>());
-      //     ^?
-    });
-
-    it('with function syntax, changes current input, returns function syntax', (): void => {
-      type Previous = Layer.Fn<TestBaseInput, TestBaseOutput, TestBaseInput, TestBaseOutput>;
-      type Value = OnionCore.ExtendingLayer<Previous, NewInputWithAuthentication, any, any, any>;
-
-      ensure(typeIsExtending<Value, LayerConstraint>());
-      //     ^?
-
-      ensure(typeIsExtending<Value, OnionCore.LayerFunctionImplementationConstraint>());
-      //     ^?
-    });
-
-    it('with class syntax, changes current input, returns class syntax', (): void => {
-      type Previous = Layer.Class<TestBaseInput, TestBaseOutput, TestBaseInput, TestBaseOutput>;
-      type Value = OnionCore.ExtendingLayer<Previous, NewInputWithAuthentication, any, any, any>;
-
-      ensure(typeIsExtending<Value, LayerConstraint>());
-      //     ^?
-
-      ensure(typeIsExtending<Value, OnionCore.LayerClassImplementationConstraint>());
+      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewOutput<Value>, NewOutputWithAuthentication>());
       //     ^?
     });
   });
@@ -667,7 +598,11 @@ describe(Composer.name, (): void => {
       const layer1 = createLayerClassMock<Layer<any, any, NewInputWithAuthentication, any>>();
 
       layer1.invoke.mockImplementationOnce(async (input, next) => {
-        return next(input);
+        return next({
+          ...input,
+
+          authenticated: false,
+        });
       });
 
       const composer2 = composer1.use(layer1);
@@ -735,7 +670,13 @@ describe(Composer.name, (): void => {
       const layer1 = createLayerClassMock<Layer<any, any, any, NewOutputWithAuthentication>>();
 
       layer1.invoke.mockImplementationOnce(async (input, next) => {
-        return next(input);
+        const result = await next(input);
+
+        if (isOutputType<NewOutputWithAuthentication>(result, 'o:test:authenticated')) {
+          throw new Error();
+        }
+
+        return result;
       });
 
       const composer2 = composer1.use(layer1);
@@ -802,7 +743,11 @@ describe(Composer.name, (): void => {
       const layer1 = createLayerClassMock<Layer<any, any, NewInputWithAuthentication, any>>();
 
       layer1.invoke.mockImplementationOnce(async (input, next) => {
-        return next(input);
+        return next({
+          ...input,
+
+          authenticated: false,
+        });
       });
 
       const composer2 = composer1.use(layer1);
@@ -869,7 +814,13 @@ describe(Composer.name, (): void => {
       const layer1 = createLayerClassMock<Layer<any, any, any, NewOutputWithAuthentication>>();
 
       layer1.invoke.mockImplementationOnce(async (input, next) => {
-        return next(input);
+        const result = await next(input);
+
+        if (isOutputType<NewOutputWithAuthentication>(result, 'o:test:authenticated')) {
+          throw new Error();
+        }
+
+        return result;
       });
 
       const composer2 = composer1.use(layer1);
@@ -936,7 +887,11 @@ describe(Composer.name, (): void => {
       const layer1 = createLayerClassMock<Layer<any, any, NewInputWithAuthentication, any>>();
 
       layer1.invoke.mockImplementationOnce(async (input, next) => {
-        return next(input);
+        return next({
+          ...input,
+
+          authenticated: false,
+        });
       });
 
       const composer2 = composer1.use(layer1);
@@ -1027,7 +982,13 @@ describe(Composer.name, (): void => {
       const layer1 = createLayerClassMock<Layer<any, any, any, NewOutputWithAuthentication>>();
 
       layer1.invoke.mockImplementationOnce(async (input, next) => {
-        return next(input);
+        const result = await next(input);
+
+        if (isOutputType<NewOutputWithAuthentication>(result, 'o:test:authenticated')) {
+          throw new Error();
+        }
+
+        return result;
       });
 
       const composer2 = composer1.use(layer1);
@@ -1581,7 +1542,11 @@ describe(Composer.name, (): void => {
       const layer1 = createLayerFunctionMock<Layer<any, any, NewInputWithAuthentication, any>>();
 
       layer1.mockImplementationOnce(async (input, next) => {
-        return next(input);
+        return next({
+          ...input,
+
+          authenticated: false,
+        });
       });
 
       const composer2 = composer1.use(layer1);
@@ -1649,7 +1614,13 @@ describe(Composer.name, (): void => {
       const layer1 = createLayerFunctionMock<Layer<any, any, any, NewOutputWithAuthentication>>();
 
       layer1.mockImplementationOnce(async (input, next) => {
-        return next(input);
+        const result = await next(input);
+
+        if (isOutputType<NewOutputWithAuthentication>(result, 'o:test:authenticated')) {
+          throw new Error();
+        }
+
+        return result;
       });
 
       const composer2 = composer1.use(layer1);
@@ -1716,7 +1687,11 @@ describe(Composer.name, (): void => {
       const layer1 = createLayerFunctionMock<Layer<any, any, NewInputWithAuthentication, any>>();
 
       layer1.mockImplementationOnce(async (input, next) => {
-        return next(input);
+        return next({
+          ...input,
+
+          authenticated: false,
+        });
       });
 
       const composer2 = composer1.use(layer1);
@@ -1783,7 +1758,13 @@ describe(Composer.name, (): void => {
       const layer1 = createLayerFunctionMock<Layer<any, any, any, NewOutputWithAuthentication>>();
 
       layer1.mockImplementationOnce(async (input, next) => {
-        return next(input);
+        const result = await next(input);
+
+        if (isOutputType<NewOutputWithAuthentication>(result, 'o:test:authenticated')) {
+          throw new Error();
+        }
+
+        return result;
       });
 
       const composer2 = composer1.use(layer1);
@@ -1850,7 +1831,11 @@ describe(Composer.name, (): void => {
       const layer1 = createLayerFunctionMock<Layer<any, any, NewInputWithAuthentication, any>>();
 
       layer1.mockImplementationOnce(async (input, next) => {
-        return next(input);
+        return next({
+          ...input,
+
+          authenticated: false,
+        });
       });
 
       const composer2 = composer1.use(layer1);
@@ -1941,7 +1926,13 @@ describe(Composer.name, (): void => {
       const layer1 = createLayerFunctionMock<Layer<any, any, any, NewOutputWithAuthentication>>();
 
       layer1.mockImplementationOnce(async (input, next) => {
-        return next(input);
+        const result = await next(input);
+
+        if (isOutputType<NewOutputWithAuthentication>(result, 'o:test:authenticated')) {
+          throw new Error();
+        }
+
+        return result;
       });
 
       const composer2 = composer1.use(layer1);

@@ -42,7 +42,7 @@ type TestDecodeRequestLayer<T> = Layer.With.ExpectingInput<TestInitialRequest, L
 /**
  * Our layer implementation.
  */
-class TestDecodeRequest<T> implements TestDecodeRequestLayer<T> {
+class TestDecodeRequest<T> implements Layer.Class<TestDecodeRequestLayer<T>> {
   /**
    * {@inheritdoc}
    */
@@ -74,12 +74,12 @@ type TestResponseBetter<T> = Output<'http:better', {
 /**
  * Same as before, we define locally so we can reduce code duplication.
  */
-type TestBetterResponseLayer<T> = Layer.Class<any, TestInitialResponse, any, TestResponseBetter<T>>;
+type TestBetterResponseLayer<T> = Layer<any, TestInitialResponse, any, TestResponseBetter<T>>;
 
 /**
  * Our layer implementation.
  */
-class TestBetterResponse<T> implements TestBetterResponseLayer<T> {
+class TestBetterResponse<T> implements Layer.Class<TestBetterResponseLayer<T>> {
   /**
    * {@inheritdoc}
    */
@@ -122,12 +122,12 @@ type TestResponseData = {
 /**
  * Same as previously, we define locally so we can reduce code duplication.
  */
-type TestRequestHandlerTerminus = Terminus.Class<TestRequestDecoded<TestRequestData>, TestResponseBetter<TestResponseData>>;
+type TestRequestHandlerTerminus = Terminus<TestRequestDecoded<TestRequestData>, TestResponseBetter<TestResponseData>>;
 
 /**
  * Our terminus implementation.
  */
-class TestRequestHandler implements TestRequestHandlerTerminus {
+class TestRequestHandler implements Terminus.Class<TestRequestHandlerTerminus> {
   /**
    * {@inheritdoc}
    */
