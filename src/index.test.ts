@@ -1,8 +1,8 @@
 import type { Grok } from '@matt-usurp/grok';
 import type { MockedFunction, MockedObject } from 'vitest';
-import type { $$OnionComponentLayer as L } from './component/layer';
-import type { $$OnionComponentUtility as U } from './component/utility';
-import type { ComposerConstraint, Layer, LayerConstraint, Output, OutputConstraint, Terminus, TerminusConstraint } from './index';
+import type { OnionLayer as L } from './component/layer';
+import type { OnionUtility as U } from './component/utility';
+import type { ComposerConstraint, Layer, LayerConstraint, Output, Terminus, TerminusConstraint } from './index';
 import { Composer, isOutputType, output } from './index';
 
 /* eslint-disable @typescript-eslint/ban-types */
@@ -388,7 +388,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:status', {
           status: 123,
         }),
@@ -451,7 +451,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:status', {
           status: 123,
         }),
@@ -514,7 +514,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:status', {
           status: 123,
         }),
@@ -581,7 +581,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:status', {
           status: 123,
         }),
@@ -653,7 +653,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:status', {
           status: 123,
         }),
@@ -726,7 +726,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:status', {
           status: 123,
         }),
@@ -797,7 +797,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:status', {
           status: 123,
         }),
@@ -870,7 +870,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:authenticated', {
           authenticated: false,
         }),
@@ -965,7 +965,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:status', {
           status: 123,
         }),
@@ -1062,7 +1062,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:status', {
           status: 123,
         }),
@@ -1109,7 +1109,7 @@ describe(Composer.name, (): void => {
           random: 3,
         });
 
-        expect(result).toStrictEqual<OutputConstraint>(
+        expect(result).toStrictEqual<Output.OutputKind>(
           output('o:test:status', {
             status: 123,
           }),
@@ -1155,7 +1155,7 @@ describe(Composer.name, (): void => {
           random: 3,
         });
 
-        expect(result).toStrictEqual<OutputConstraint>(
+        expect(result).toStrictEqual<Output.OutputKind>(
           output('o:test:authenticated', {
             authenticated: false,
           }),
@@ -1221,7 +1221,7 @@ describe(Composer.name, (): void => {
           random: 3,
         });
 
-        expect(result).toStrictEqual<OutputConstraint>(
+        expect(result).toStrictEqual<Output.OutputKind>(
           output('o:test:status', {
             status: 123,
           }),
@@ -1287,7 +1287,7 @@ describe(Composer.name, (): void => {
           random: 3,
         });
 
-        expect(result).toStrictEqual<OutputConstraint>(
+        expect(result).toStrictEqual<Output.OutputKind>(
           output('o:test:status', {
             status: 123,
           }),
@@ -1332,7 +1332,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:status', {
           status: 123,
         }),
@@ -1395,7 +1395,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:status', {
           status: 123,
         }),
@@ -1458,7 +1458,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:status', {
           status: 123,
         }),
@@ -1525,7 +1525,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:status', {
           status: 123,
         }),
@@ -1597,7 +1597,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:status', {
           status: 123,
         }),
@@ -1670,7 +1670,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:status', {
           status: 123,
         }),
@@ -1741,7 +1741,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:status', {
           status: 123,
         }),
@@ -1814,7 +1814,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:authenticated', {
           authenticated: false,
         }),
@@ -1909,7 +1909,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:status', {
           status: 123,
         }),
@@ -2006,7 +2006,7 @@ describe(Composer.name, (): void => {
         random: 3,
       });
 
-      expect(result).toStrictEqual<OutputConstraint>(
+      expect(result).toStrictEqual<Output.OutputKind>(
         output('o:test:status', {
           status: 123,
         }),
@@ -2053,7 +2053,7 @@ describe(Composer.name, (): void => {
           random: 3,
         });
 
-        expect(result).toStrictEqual<OutputConstraint>(
+        expect(result).toStrictEqual<Output.OutputKind>(
           output('o:test:status', {
             status: 123,
           }),
@@ -2099,7 +2099,7 @@ describe(Composer.name, (): void => {
           random: 3,
         });
 
-        expect(result).toStrictEqual<OutputConstraint>(
+        expect(result).toStrictEqual<Output.OutputKind>(
           output('o:test:authenticated', {
             authenticated: false,
           }),
@@ -2165,7 +2165,7 @@ describe(Composer.name, (): void => {
           random: 3,
         });
 
-        expect(result).toStrictEqual<OutputConstraint>(
+        expect(result).toStrictEqual<Output.OutputKind>(
           output('o:test:status', {
             status: 123,
           }),
@@ -2231,7 +2231,7 @@ describe(Composer.name, (): void => {
           random: 3,
         });
 
-        expect(result).toStrictEqual<OutputConstraint>(
+        expect(result).toStrictEqual<Output.OutputKind>(
           output('o:test:status', {
             status: 123,
           }),

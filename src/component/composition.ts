@@ -1,13 +1,13 @@
-import type { $$OnionComponentInput as I } from './input';
-import type { $$OnionComponentLayer as L } from './layer';
-import type { $$OnionComponentOutput as O } from './output';
-import type { $$OnionComponentTerminus as T } from './terminus';
-import type { $$OnionComponentUtility as U } from './utility';
+import type { OnionInput } from './input';
+import type { OnionLayer } from './layer';
+import type { OnionOutput } from './output';
+import type { OnionTerminus } from './terminus';
+import type { OnionUtility as U } from './utility';
 
 /**
  * Onion internals namespace for the composition component.
  */
-namespace Onion {
+export namespace OnionComposition {
   /**
    * A function that can be used to instrument the various levels of the composition.
    *
@@ -15,7 +15,7 @@ namespace Onion {
    * Each layer is passed in order defined before being passed the terminus.
    */
   export type CompositionInstrumentFunction<GivenInput, GivenOutput> = (
-    implementation: L.LayerImplementationConstraint | T.TerminusImplementationConstraint,
+    implementation: OnionLayer.LayerImplementationConstraint | OnionTerminus.TerminusImplementationConstraint,
     next: U.Syntax.FunctionImplementation<U.Anything, Promise<U.Anything>>,
   ) => U.Syntax.FunctionImplementation<GivenInput, Promise<GivenOutput>>;
 
@@ -30,18 +30,18 @@ namespace Onion {
    * The composition that was created using the builder.
    *
    * Provided are:
-   * - All the {@link L.LayerImplementationConstraint Layers} that were used.
+   * - All the {@link OnionLayer.LayerImplementationConstraint Layers} that were used.
    * - A `build()` function that will create an invokable chain with an optional instrumentation function.
    * - A `invoke()` function that is prebuilt.
    */
   export type Composition<
-    GivenInput extends I.InputConstraint,
-    GivenOutput extends O.OutputConstraint,
+    GivenInput extends OnionInput.InputKind,
+    GivenOutput extends OnionOutput.OutputKind,
   > = {
     /**
      * All layers.
      */
-    readonly layers: L.LayerImplementationConstraint[];
+    readonly layers: OnionLayer.LayerImplementationConstraint[];
 
     /**
      * A builder for the composition.
@@ -56,11 +56,9 @@ namespace Onion {
 
   // Syntax sugar:
   export namespace Composition {
-    export import Instrument = Onion.CompositionInstrumentFunction;
+    export import Instrument = OnionComposition.CompositionInstrumentFunction;
   }
 }
-
-export { Onion as $$OnionComponentComposition };
 
 export const createOnionCompositionGlobalInvoke = (value: unknown): ((...args: unknown[]) => Promise<unknown>) => {
   if ((value as Record<'invoke', unknown>).invoke !== undefined) {

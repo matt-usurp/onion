@@ -1,16 +1,16 @@
-import type { $$OnionComponentInput as I } from './input';
-import type { $$OnionComponentOutput as O } from './output';
-import type { $$OnionComponentUtility as U } from './utility';
+import type { OnionInput as I } from './input';
+import type { OnionOutput } from './output';
+import type { OnionUtility as U } from './utility';
 
 /**
  * Onion internals namespace for the terminus component.
  */
-namespace Onion {
+export namespace OnionTerminus {
   export type GetTerminusDefinitionInput<GivenTerminusDefinition extends TerminusDefinitionConstraint, Fallback = never> = U.Cleanse.Fallback<GivenTerminusDefinition['CurrentInput'], Fallback>;
   export type GetTerminusDefinitionOutput<GivenTerminusDefinition extends TerminusDefinitionConstraint, Fallback = never> = U.Cleanse.Fallback<GivenTerminusDefinition['CurrentOutput'], Fallback>;
 
   export type MakeTerminusInput<GivenTerminusDefinition extends TerminusDefinitionConstraint> = U.Cleanse.Fallback<GetTerminusDefinitionInput<GivenTerminusDefinition>, undefined>;
-  export type MakeTerminusOutput<GivenTerminusDefinition extends TerminusDefinitionConstraint> = Promise<U.Cleanse.Fallback<GetTerminusDefinitionOutput<GivenTerminusDefinition>, O.OutputConstraint>>;
+  export type MakeTerminusOutput<GivenTerminusDefinition extends TerminusDefinitionConstraint> = Promise<U.Cleanse.Fallback<GetTerminusDefinitionOutput<GivenTerminusDefinition>, OnionOutput.OutputKind>>;
 
   /**
    * A terminus implementation using the class style syntax.
@@ -54,8 +54,8 @@ namespace Onion {
    * Take the {@link GivenInput} and provide a return of {@link GivenOutput}.
    */
   export type TerminusDefinition<
-    CurrentInput extends I.InputConstraint,
-    CurrentOutput extends O.OutputConstraint,
+    CurrentInput extends I.InputKind,
+    CurrentOutput extends OnionOutput.OutputKind,
   > = {
     readonly CurrentInput: CurrentInput;
     readonly CurrentOutput: CurrentOutput;
@@ -63,15 +63,13 @@ namespace Onion {
 
   // Syntax sugar:
   export namespace TerminusDefinition {
-    export import Class = Onion.TerminusClassImplementation;
-    export import Fn = Onion.TerminusFunctionImplementation;
+    export import Class = OnionTerminus.TerminusClassImplementation;
+    export import Fn = OnionTerminus.TerminusFunctionImplementation;
 
-    export import Input = Onion.MakeTerminusInput;
-    export import Output = Onion.MakeTerminusOutput;
+    export import Input = OnionTerminus.MakeTerminusInput;
+    export import Output = OnionTerminus.MakeTerminusOutput;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export type TerminusDefinitionConstraint = TerminusDefinition<any, any>;
 }
-
-export { Onion as $$OnionComponentTerminus };

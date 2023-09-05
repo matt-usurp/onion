@@ -1,7 +1,7 @@
 import type { Grok } from '@matt-usurp/grok';
-import type { $$OnionComponentInput as I } from './input';
-import type { $$OnionComponentOutput as O } from './output';
-import type { $$OnionComponentUtility as U } from './utility';
+import type { OnionInput } from './input';
+import type { OnionOutput } from './output';
+import type { OnionUtility as U } from './utility';
 
 const InheritMarker = Symbol();
 const InheritInput = Symbol();
@@ -10,7 +10,7 @@ const InheritOutput = Symbol();
 /**
  * Onion internals namespace for the layer component.
  */
-namespace Onion {
+export namespace OnionLayer {
   /**
    * This requires that the given input to the {@link Layer} be passed through to the next function via spread.
    * The purpose of this is to ensure properties that you are not aware are passed down through the stack.
@@ -23,7 +23,7 @@ namespace Onion {
    * This requires that output from the next function is passed through the {@link Layer} return statement.
    * The purpose of this is to ensure the responses from other layers are passed up through the stack.
    */
-  export type LayerEnforceNextOutputPassThrough = O.Output<'layer:passthtrough', {
+  export type LayerEnforceNextOutputPassThrough = OnionOutput<'layer:passthtrough', {
     readonly [InheritMarker]: typeof InheritOutput;
   }>;
 
@@ -34,10 +34,10 @@ namespace Onion {
 
   export type ExtendingLayerDefinition<
     GivenLayerDefinition extends LayerConstraint,
-    CurrentInput extends I.InputConstraint,
-    CurrentOutput extends O.OutputConstraint,
-    NewInput extends I.InputConstraint,
-    NewOutput extends O.OutputConstraint,
+    CurrentInput extends OnionInput.InputKind,
+    CurrentOutput extends OnionOutput.OutputKind,
+    NewInput extends OnionInput.InputKind,
+    NewOutput extends OnionOutput.OutputKind,
   > = (
   /* eslint-disable @typescript-eslint/indent */
     Layer<
@@ -50,18 +50,18 @@ namespace Onion {
   );
 
   export type WithLayerDefinitionExpectingCurrentInput<
-    CurrentInput extends I.InputConstraint,
+    CurrentInput extends OnionInput.InputKind,
     GivenLayerDefinition extends LayerConstraint = LayerConstraint,
   > = ExtendingLayerDefinition<GivenLayerDefinition, CurrentInput, any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
   export type WithLayerDefinitionProvidingNewInput<
-    NewInput extends I.InputConstraint,
+    NewInput extends OnionInput.InputKind,
     GivenLayerDefinition extends LayerConstraint = LayerConstraint,
   > = ExtendingLayerDefinition<GivenLayerDefinition, any, any, NewInput, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
   export type WithLayerDefinitionProvidingNewOutput<
-    CurrentOutput extends O.OutputConstraint,
-    NewOutput extends O.OutputConstraint,
+    CurrentOutput extends OnionOutput.OutputKind,
+    NewOutput extends OnionOutput.OutputKind,
     GivenLayerDefinition extends LayerConstraint = LayerConstraint,
   > = ExtendingLayerDefinition<GivenLayerDefinition, any, CurrentOutput, any, NewOutput>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -164,10 +164,10 @@ namespace Onion {
    * With the given {@link NewOutput} and ensure its compatible or transformed into {@link CurrentOutput}.
    */
   export type Layer<
-    CurrentInput extends I.InputConstraint,
-    CurrentOutput extends O.OutputConstraint,
-    NewInput extends I.InputConstraint,
-    NewOutput extends O.OutputConstraint,
+    CurrentInput extends OnionInput.InputKind,
+    CurrentOutput extends OnionOutput.OutputKind,
+    NewInput extends OnionInput.InputKind,
+    NewOutput extends OnionOutput.OutputKind,
   > = {
     readonly CurrentInput: CurrentInput;
     readonly CurrentOutput: CurrentOutput;
@@ -177,17 +177,17 @@ namespace Onion {
 
   // Syntax sugar:
   export namespace Layer {
-    export import Class = Onion.LayerClassImplementation;
-    export import Fn = Onion.LayerFunctionImplementation;
+    export import Class = OnionLayer.LayerClassImplementation;
+    export import Fn = OnionLayer.LayerFunctionImplementation;
 
-    export import Input = Onion.MakeLayerInput;
-    export import Output = Onion.MakeLayerOutput;
-    export import Next = Onion.MakeLayerNext;
+    export import Input = OnionLayer.MakeLayerInput;
+    export import Output = OnionLayer.MakeLayerOutput;
+    export import Next = OnionLayer.MakeLayerNext;
 
     export namespace With {
-      export import ExpectingInput = Onion.WithLayerDefinitionExpectingCurrentInput;
-      export import ProvidingInput = Onion.WithLayerDefinitionProvidingNewInput;
-      export import ProvidingResponse = Onion.WithLayerDefinitionProvidingNewOutput;
+      export import ExpectingInput = OnionLayer.WithLayerDefinitionExpectingCurrentInput;
+      export import ProvidingInput = OnionLayer.WithLayerDefinitionProvidingNewInput;
+      export import ProvidingResponse = OnionLayer.WithLayerDefinitionProvidingNewOutput;
     }
   }
 
@@ -202,5 +202,3 @@ namespace Onion {
   /* eslint-enable @typescript-eslint/indent */
   );
 }
-
-export { Onion as $$OnionComponentLayer };

@@ -1,17 +1,14 @@
 import type { Grok } from '@matt-usurp/grok';
-import { $$OnionComponentComposition as C, createOnionCompositionGlobalInvoke } from './component/composition';
-import { $$OnionComponentInput as I } from './component/input';
-import { $$OnionComponentLayer as L } from './component/layer';
-import { $$OnionComponentOutput as O, isOutputType, output } from './component/output';
-import { $$OnionComponentTerminus as T } from './component/terminus';
-import type { $$OnionComponentUtility as U } from './component/utility';
-
-export import InputConstraint = I.InputConstraint;
-
-export import Output = O.Output;
-export import OutputConstraint = O.OutputConstraint;
+import { OnionComposition as C, createOnionCompositionGlobalInvoke } from './component/composition';
+import type { OnionInput } from './component/input';
+import { OnionLayer as L } from './component/layer';
+import type { OnionOutput } from './component/output';
+import { isOutputType, output } from './component/output';
+import { OnionTerminus as T } from './component/terminus';
+import type { OnionUtility as U } from './component/utility';
 
 export { isOutputType, output };
+export type { OnionInput as Input, OnionOutput as Output };
 
 export import Terminus = T.TerminusDefinition;
 export import TerminusConstraint = T.TerminusDefinitionConstraint;
@@ -25,10 +22,10 @@ export import Composition = C.Composition;
  * Compose an onion function (the {@link Terminus}) with given {@link Layer Layers}.
  */
 export class Composer<
-  CurrentInput extends InputConstraint,
-  CurrentOutput extends OutputConstraint,
-  InitialInput extends InputConstraint,
-  InitialOutput extends OutputConstraint,
+  CurrentInput extends OnionInput.InputKind,
+  CurrentOutput extends OnionOutput.OutputKind,
+  InitialInput extends OnionInput.InputKind,
+  InitialOutput extends OnionOutput.OutputKind,
 > {
   protected readonly layers: L.LayerImplementationConstraint[] = [];
 
@@ -36,8 +33,8 @@ export class Composer<
    * Create an instance of {@link Composer} with {@link InitialInput} and {@link InitialOutput}.
    */
   public static create<
-    InitialInput extends InputConstraint,
-    InitialOutput extends OutputConstraint,
+    InitialInput extends OnionInput.InputKind,
+    InitialOutput extends OnionOutput.OutputKind,
   >(): Composer<InitialInput, InitialOutput, InitialInput, InitialOutput> {
     return new this();
   }

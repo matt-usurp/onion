@@ -3,7 +3,7 @@ import type { Grok } from '@matt-usurp/grok';
 /**
  * Onion internals namespace for the utilities.
  */
-namespace Onion {
+export namespace OnionUtility {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export type Anything = any;
 
@@ -38,5 +38,3 @@ namespace Onion {
     export type Fallback<Value, Fallback> = Cleanse<Value, Fallback, Value>;
   }
 }
-
-export { Onion as $$OnionComponentUtility };
