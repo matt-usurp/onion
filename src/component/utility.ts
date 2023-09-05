@@ -4,14 +4,16 @@ import type { Grok } from '@matt-usurp/grok';
  * Onion internals namespace for the utilities.
  */
 namespace Onion {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export type Anything = any;
+
   export namespace Syntax {
     /**
      * A generic function with one {@link Input} and {@link Output}.
      */
     export type FunctionImplementation<Input, Output> = (input: Input) => Output;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export type FunctionImplementationConstraint = FunctionImplementation<any, any>;
+    export type FunctionImplementationKind = FunctionImplementation<Anything, Anything>;
 
     /**
      * A generic class with an invoke method of type {@link Fn}.

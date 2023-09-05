@@ -102,19 +102,19 @@ export class Composer<
     const build: C.CompositionBuilderFunction<InitialInput, InitialOutput> = (instrument) => {
       if (this.layers.length === 0) {
         if (instrument === undefined) {
-          return terminusInvokable as U.Syntax.FunctionImplementationConstraint;
+          return terminusInvokable as U.Syntax.FunctionImplementationKind;
         }
 
         return instrument(terminus, terminusInvokable);
       }
 
       if (instrument === undefined) {
-        return this.layers.reduceRight<U.Syntax.FunctionImplementationConstraint>((next, layer) => {
+        return this.layers.reduceRight<U.Syntax.FunctionImplementationKind>((next, layer) => {
           return async (input) => createOnionCompositionGlobalInvoke(layer)(input, next);
         }, terminusInvokable);
       }
 
-      return this.layers.reduceRight<U.Syntax.FunctionImplementationConstraint>((next, layer) => {
+      return this.layers.reduceRight<U.Syntax.FunctionImplementationKind>((next, layer) => {
         return instrument(layer, async (input) => createOnionCompositionGlobalInvoke(layer)(input, next));
       }, terminusInvokable);
     };
