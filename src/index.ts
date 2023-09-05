@@ -1,31 +1,25 @@
 import type { Grok } from '@matt-usurp/grok';
-import type { OnionCoreComposition } from './component/composition';
-import { OnionCoreInput } from './component/input';
-import { OnionCoreLayer } from './component/layer';
-import { OnionCoreOutput, isOutputType, output } from './component/output';
-import { OnionCoreTerminus } from './component/terminus';
-import type { OnionCoreUtility } from './component/utility';
+import { $$OnionComponentComposition as C, createOnionCompositionGlobalInvoke } from './component/composition';
+import { $$OnionComponentInput as I } from './component/input';
+import { $$OnionComponentLayer as L } from './component/layer';
+import { $$OnionComponentOutput as O, isOutputType, output } from './component/output';
+import { $$OnionComponentTerminus as T } from './component/terminus';
+import type { $$OnionComponentUtility as U } from './component/utility';
 
-export import InputConstraint = OnionCoreInput.InputConstraint;
+export import InputConstraint = I.InputConstraint;
 
-export import Output = OnionCoreOutput.Output;
-export import OutputConstraint = OnionCoreOutput.OutputConstraint;
+export import Output = O.Output;
+export import OutputConstraint = O.OutputConstraint;
 
 export { isOutputType, output };
 
-export import Terminus = OnionCoreTerminus.TerminusDefinition;
-export import TerminusConstraint = OnionCoreTerminus.TerminusDefinitionConstraint;
+export import Terminus = T.TerminusDefinition;
+export import TerminusConstraint = T.TerminusDefinitionConstraint;
 
-export import Layer = OnionCoreLayer.Layer;
-export import LayerConstraint = OnionCoreLayer.LayerConstraint;
+export import Layer = L.Layer;
+export import LayerConstraint = L.LayerConstraint;
 
-export const createImplementationGlobalInvoke = (value: unknown): ((...args: unknown[]) => unknown) => {
-  if ((value as Record<'invoke', unknown>).invoke !== undefined) {
-    return (value as Record<'invoke', unknown>).invoke as ((...args: unknown[]) => unknown);
-  }
-
-  return value as ((...args: unknown[]) => unknown);
-};
+export import Composition = C.Composition;
 
 /**
  * Compose an onion function (the {@link Terminus}) with given {@link Layer Layers}.
@@ -36,7 +30,7 @@ export class Composer<
   InitialInput extends InputConstraint,
   InitialOutput extends OutputConstraint,
 > {
-  protected readonly layers: OnionCoreLayer.LayerImplementationConstraint[] = [];
+  protected readonly layers: L.LayerImplementationConstraint[] = [];
 
   /**
    * Create an instance of {@link Composer} with {@link InitialInput} and {@link InitialOutput}.
@@ -59,14 +53,14 @@ export class Composer<
   public use<
     GivenLayerDefinition extends Layer<GivenInput, GivenOutput, any, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
     GivenInput extends CurrentInput,
-    GivenOutput extends CurrentOutput | OnionCoreLayer.LayerEnforceNextOutputPassThrough,
-  >(layer: OnionCoreLayer.LayerImplementation<GivenLayerDefinition>): (
+    GivenOutput extends CurrentOutput | L.LayerEnforceNextOutputPassThrough,
+  >(layer: L.LayerImplementation<GivenLayerDefinition>): (
   /* eslint-disable @typescript-eslint/indent */
     Composer<
       (
         GivenLayerDefinition extends Layer<any, any, infer I, any> // eslint-disable-line @typescript-eslint/no-explicit-any
         ? (
-          OnionCoreUtility.Cleanse<
+          U.Cleanse<
             I,
             CurrentInput,
             Grok.Merge<CurrentInput, I>
@@ -77,10 +71,10 @@ export class Composer<
       (
         GivenLayerDefinition extends Layer<any, any, any, infer I> // eslint-disable-line @typescript-eslint/no-explicit-any
         ? (
-          OnionCoreUtility.Cleanse<
+          U.Cleanse<
             I,
-            Exclude<CurrentOutput, OnionCoreLayer.LayerEnforceNextOutputPassThrough>,
-            Grok.Union<CurrentOutput, Exclude<I, OnionCoreLayer.LayerEnforceNextOutputPassThrough>>
+            Exclude<CurrentOutput, L.LayerEnforceNextOutputPassThrough>,
+            Grok.Union<CurrentOutput, Exclude<I, L.LayerEnforceNextOutputPassThrough>>
           >
         )
         : 'Error:CannotInferGivenLayerDefinition'
@@ -102,26 +96,26 @@ export class Composer<
     GivenTerminusDefinition extends Terminus<GivenInput, GivenOutput>,
     GivenInput extends CurrentInput,
     GivenOutput extends CurrentOutput,
-  >(terminus: OnionCoreTerminus.TerminusImplementation<GivenTerminusDefinition>): OnionCoreComposition.Composition<InitialInput, InitialOutput> {
-    const terminusInvokable = createImplementationGlobalInvoke(terminus);
+  >(terminus: T.TerminusImplementation<GivenTerminusDefinition>): C.Composition<InitialInput, InitialOutput> {
+    const terminusInvokable = createOnionCompositionGlobalInvoke(terminus);
 
-    const build: OnionCoreComposition.CompositionBuilderFunction<InitialInput, InitialOutput> = (instrument) => {
+    const build: C.CompositionBuilderFunction<InitialInput, InitialOutput> = (instrument) => {
       if (this.layers.length === 0) {
         if (instrument === undefined) {
-          return terminusInvokable as OnionCoreUtility.Syntax.FunctionImplementationConstraint;
+          return terminusInvokable as U.Syntax.FunctionImplementationConstraint;
         }
 
         return instrument(terminus, terminusInvokable);
       }
 
       if (instrument === undefined) {
-        return this.layers.reduceRight<OnionCoreUtility.Syntax.FunctionImplementationConstraint>((next, layer) => {
-          return async (input) => createImplementationGlobalInvoke(layer)(input, next);
+        return this.layers.reduceRight<U.Syntax.FunctionImplementationConstraint>((next, layer) => {
+          return async (input) => createOnionCompositionGlobalInvoke(layer)(input, next);
         }, terminusInvokable);
       }
 
-      return this.layers.reduceRight<OnionCoreUtility.Syntax.FunctionImplementationConstraint>((next, layer) => {
-        return instrument(layer, async (input) => createImplementationGlobalInvoke(layer)(input, next));
+      return this.layers.reduceRight<U.Syntax.FunctionImplementationConstraint>((next, layer) => {
+        return instrument(layer, async (input) => createOnionCompositionGlobalInvoke(layer)(input, next));
       }, terminusInvokable);
     };
 

@@ -1,4 +1,7 @@
-export namespace OnionCoreOutput {
+/**
+ * Onion internals namespace for the output component.
+ */
+namespace Onion {
   /**
    * A typed output that can be used to transport data within the {@link Composer} instances.
    *
@@ -30,12 +33,14 @@ export namespace OnionCoreOutput {
   );
 }
 
+export { Onion as $$OnionComponentOutput };
+
 /**
  * Create instances of {@link Output} (generic type {@link T}).
  */
-export const output = <T extends OnionCoreOutput.OutputConstraint>(type: T['type'], value: T['value']): T => ({ type, value } as T);
+export const output = <T extends Onion.OutputConstraint>(type: T['type'], value: T['value']): T => ({ type, value } as T);
 
-export const isOutputType = <T extends OnionCoreOutput.OutputConstraint>(output: unknown, type: T['type']): output is T => {
+export const isOutputType = <T extends Onion.OutputConstraint>(output: unknown, type: T['type']): output is T => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (output as any).type === type;
 };

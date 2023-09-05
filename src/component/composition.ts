@@ -1,28 +1,41 @@
-import type { OnionCoreInput } from './input';
-import type { OnionCoreLayer } from './layer';
-import type { OnionCoreOutput } from './output';
-import type { OnionCoreTerminus } from './terminus';
-import type { OnionCoreUtility } from './utility';
+import type { $$OnionComponentInput as I } from './input';
+import type { $$OnionComponentLayer as L } from './layer';
+import type { $$OnionComponentOutput as O } from './output';
+import type { $$OnionComponentTerminus as T } from './terminus';
+import type { $$OnionComponentUtility as U } from './utility';
 
-export namespace OnionCoreComposition {
+/**
+ * Onion internals namespace for the composition component.
+ */
+namespace Onion {
   export type CompositionInstrumentFunction = (
-    thing: OnionCoreLayer.LayerImplementationConstraint | OnionCoreTerminus.TerminusImplementationConstraint,
-    next: OnionCoreUtility.Syntax.FunctionImplementation<any, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
-  ) => OnionCoreUtility.Syntax.FunctionImplementation<any, Promise<any>>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    thing: L.LayerImplementationConstraint | T.TerminusImplementationConstraint,
+    next: U.Syntax.FunctionImplementation<any, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
+  ) => U.Syntax.FunctionImplementation<any, Promise<any>>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-  export type CompositionBuilderFunction<I, O> = (instrument?: CompositionInstrumentFunction) => OnionCoreUtility.Syntax.FunctionImplementation<I, Promise<O>>;
+  export type CompositionBuilderFunction<I, O> = (instrument?: CompositionInstrumentFunction) => U.Syntax.FunctionImplementation<I, Promise<O>>;
 
   export type Composition<
-    GivenInput extends OnionCoreInput.InputConstraint,
-    GivenOutput extends OnionCoreOutput.OutputConstraint,
+    GivenInput extends I.InputConstraint,
+    GivenOutput extends O.OutputConstraint,
   > = {
-    readonly layers: OnionCoreLayer.LayerImplementationConstraint[];
-    readonly build: OnionCoreComposition.CompositionBuilderFunction<GivenInput, GivenOutput>;
-    readonly invoke: OnionCoreUtility.Syntax.FunctionImplementation<GivenInput, Promise<GivenOutput>>;
+    readonly layers: L.LayerImplementationConstraint[];
+    readonly build: Onion.CompositionBuilderFunction<GivenInput, GivenOutput>;
+    readonly invoke: U.Syntax.FunctionImplementation<GivenInput, Promise<GivenOutput>>;
   };
 
   // Syntax sugar:
   export namespace Composition {
-    export import Instrument = OnionCoreComposition.CompositionInstrumentFunction;
+    export import Instrument = Onion.CompositionInstrumentFunction;
   }
 }
+
+export { Onion as $$OnionComponentComposition };
+
+export const createOnionCompositionGlobalInvoke = (value: unknown): ((...args: unknown[]) => unknown) => {
+  if ((value as Record<'invoke', unknown>).invoke !== undefined) {
+    return (value as Record<'invoke', unknown>).invoke as ((...args: unknown[]) => unknown);
+  }
+
+  return value as ((...args: unknown[]) => unknown);
+};

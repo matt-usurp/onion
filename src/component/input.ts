@@ -1,4 +1,7 @@
-export namespace OnionCoreInput {
+/**
+ * Onion internals namespace for the input component.
+ */
+namespace Onion {
   /**
    * A constraint type that can be used to accept types of input.
    *
@@ -6,3 +9,5 @@ export namespace OnionCoreInput {
    */
   export type InputConstraint = Record<string, unknown>;
 }
+
+export { Onion as $$OnionComponentInput };

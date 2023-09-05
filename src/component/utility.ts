@@ -1,6 +1,9 @@
 import type { Grok } from '@matt-usurp/grok';
 
-export namespace OnionCoreUtility {
+/**
+ * Onion internals namespace for the utilities.
+ */
+namespace Onion {
   export namespace Syntax {
     /**
      * A generic function with one {@link Input} and {@link Output}.
@@ -33,3 +36,5 @@ export namespace OnionCoreUtility {
     export type Fallback<Value, Fallback> = Cleanse<Value, Fallback, Value>;
   }
 }
+
+export { Onion as $$OnionComponentUtility };
