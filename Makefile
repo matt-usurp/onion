@@ -106,15 +106,15 @@ build.compile:
 
 build.compile.verify:
 	test ! -z "${DIR_WORKSPACE}"
-	test -d ${DIR_WORKSPACE}/data
-	test -d ${DIR_WORKSPACE}/handler
-	test -d ${DIR_WORKSPACE}/http
 
-	test -f ${DIR_WORKSPACE}/http/client.js
-	test -f ${DIR_WORKSPACE}/http/client.d.ts
+	test -d ${DIR_WORKSPACE}/component
+	test -f ${DIR_WORKSPACE}/component/composition.js
+	test -f ${DIR_WORKSPACE}/component/layer.js
+	test -f ${DIR_WORKSPACE}/component/terminus.js
+	test -f ${DIR_WORKSPACE}/component/utility.js
 
-	test -f ${DIR_WORKSPACE}/http/endpoint.js
-	test -f ${DIR_WORKSPACE}/http/endpoint.d.ts
+	test -f ${DIR_WORKSPACE}/index.js
+	test -f ${DIR_WORKSPACE}/index.d.ts
 
 build.compile.clean:
 	find ${DIR_WORKSPACE} -type f -name "*.test.js" -delete

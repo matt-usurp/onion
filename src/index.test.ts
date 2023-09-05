@@ -1,6 +1,8 @@
 import type { Grok } from '@matt-usurp/grok';
 import type { MockedFunction, MockedObject } from 'vitest';
-import type { ComposerConstraint, Layer, LayerConstraint, OnionCore, Output, OutputConstraint, Terminus, TerminusConstraint } from './index';
+import type { OnionCoreLayer } from './component/layer';
+import type { OnionCoreUtility } from './component/utility';
+import type { ComposerConstraint, Layer, LayerConstraint, Output, OutputConstraint, Terminus, TerminusConstraint } from './index';
 import { Composer, isOutputType, output } from './index';
 
 /* eslint-disable @typescript-eslint/ban-types */
@@ -62,13 +64,13 @@ const typeIsExtendingReverse = <A, B>(): Grok.Value.IsExtending<B, A> => undefin
 
 type InferComposerCurrentInput<T extends ComposerConstraint> = (
   T extends Composer<infer I, any, any, any> // eslint-disable-line @typescript-eslint/no-explicit-any
-    ? OnionCore.Cleanse<I, never, I>
+    ? OnionCoreUtility.Cleanse<I, never, I>
     : never
 );
 
 type InferComposerCurrentOutput<T extends ComposerConstraint> = (
   T extends Composer<any, infer I, any, any> // eslint-disable-line @typescript-eslint/no-explicit-any
-    ? OnionCore.Cleanse<I, never, I>
+    ? OnionCoreUtility.Cleanse<I, never, I>
     : never
 );
 
@@ -85,25 +87,25 @@ describe('type, OnionCore', (): void => {
   describe('type, LayerFunctionImplementation', (): void => {
     it('with', (): void => {
       type Definition = Layer<TestBaseInput, TestBaseOutput, NewInputWithAuthentication, NewOutputWithAuthentication>;
-      type Expect = OnionCore.LayerFunctionImplementation<Definition>;
+      type Expect = OnionCoreLayer.LayerFunctionImplementation<Definition>;
       type ExpectNext = Parameters<Expect>[1];
 
-      ensure(typeIsExtending<Parameters<Expect>[0], OnionCore.LayerEnforceNextInputPassThrough>());
+      ensure(typeIsExtending<Parameters<Expect>[0], OnionCoreLayer.LayerEnforceNextInputPassThrough>());
       //     ^?
       ensure(typeIsExtending<Parameters<Expect>[0], TestBaseInput>());
       //     ^?
 
-      ensure(typeIsExtendingReverse<Awaited<ReturnType<Expect>>, OnionCore.LayerEnforceNextOutputPassThrough>());
+      ensure(typeIsExtendingReverse<Awaited<ReturnType<Expect>>, OnionCoreLayer.LayerEnforceNextOutputPassThrough>());
       //     ^?
       ensure(typeIsExtendingReverse<Awaited<ReturnType<Expect>>, TestBaseOutput>());
       //     ^?
 
-      ensure(typeIsExtending<Parameters<ExpectNext>[0], OnionCore.LayerEnforceNextInputPassThrough>());
+      ensure(typeIsExtending<Parameters<ExpectNext>[0], OnionCoreLayer.LayerEnforceNextInputPassThrough>());
       //     ^?
       ensure(typeIsExtending<Parameters<ExpectNext>[0], NewInputWithAuthentication>());
       //     ^?
 
-      ensure(typeIsExtendingReverse<Awaited<ReturnType<ExpectNext>>, OnionCore.LayerEnforceNextOutputPassThrough>());
+      ensure(typeIsExtendingReverse<Awaited<ReturnType<ExpectNext>>, OnionCoreLayer.LayerEnforceNextOutputPassThrough>());
       //     ^?
       ensure(typeIsExtendingReverse<Awaited<ReturnType<ExpectNext>>, NewOutputWithAuthentication>());
       //     ^?
@@ -113,7 +115,7 @@ describe('type, OnionCore', (): void => {
   describe('type, GetLayerDefinitionCurrentInput', (): void => {
     it('with layer, infers input, with any, fallback never', (): void => {
       type Definition = Layer<any, any, any, any>;
-      type Expect = OnionCore.GetLayerDefinitionCurrentInput<Definition>;
+      type Expect = OnionCoreLayer.GetLayerDefinitionCurrentInput<Definition>;
       //   ^?
 
       ensure(typeIsExactly<Expect, never>());
@@ -122,7 +124,7 @@ describe('type, OnionCore', (): void => {
 
     it('with layer, infers input, with any, fallback defined', (): void => {
       type Value = Layer<any, any, any, any>;
-      type Expect = OnionCore.GetLayerDefinitionCurrentInput<Value, 1>;
+      type Expect = OnionCoreLayer.GetLayerDefinitionCurrentInput<Value, 1>;
       //   ^?
 
       ensure(typeIsExactly<Expect, 1>());
@@ -131,7 +133,7 @@ describe('type, OnionCore', (): void => {
 
     it('with layer, infers input, with any, fallback defined', (): void => {
       type Value = Layer<TestBaseInput, any, any, any>;
-      type Expect = OnionCore.GetLayerDefinitionCurrentInput<Value>;
+      type Expect = OnionCoreLayer.GetLayerDefinitionCurrentInput<Value>;
       //   ^?
 
       ensure(typeIsExactly<Expect, TestBaseInput>());
@@ -142,7 +144,7 @@ describe('type, OnionCore', (): void => {
   describe('type, GetLayerDefinitionCurrentOutput', (): void => {
     it('with layer, infers input, with any, fallback never', (): void => {
       type Value = Layer<any, any, any, any>;
-      type Expect = OnionCore.GetLayerDefinitionCurrentOutput<Value>;
+      type Expect = OnionCoreLayer.GetLayerDefinitionCurrentOutput<Value>;
       //   ^?
 
       ensure(typeIsExactly<Expect, never>());
@@ -151,7 +153,7 @@ describe('type, OnionCore', (): void => {
 
     it('with layer, infers input, with any, fallback defined', (): void => {
       type Value = Layer<any, any, any, any>;
-      type Expect = OnionCore.GetLayerDefinitionCurrentOutput<Value, 1>;
+      type Expect = OnionCoreLayer.GetLayerDefinitionCurrentOutput<Value, 1>;
       //   ^?
 
       ensure(typeIsExactly<Expect, 1>());
@@ -160,7 +162,7 @@ describe('type, OnionCore', (): void => {
 
     it('with layer, infers input, with any, fallback defined', (): void => {
       type Value = Layer<any, TestBaseOutput, any, any>;
-      type Expect = OnionCore.GetLayerDefinitionCurrentOutput<Value>;
+      type Expect = OnionCoreLayer.GetLayerDefinitionCurrentOutput<Value>;
       //   ^?
 
       ensure(typeIsExactly<Expect, TestBaseOutput>());
@@ -171,7 +173,7 @@ describe('type, OnionCore', (): void => {
   describe('type, GetLayerDefinitionNewInput', (): void => {
     it('with layer, infers input, with any, fallback never', (): void => {
       type Value = Layer<any, any, any, any>;
-      type Expect = OnionCore.GetLayerDefinitionNewInput<Value>;
+      type Expect = OnionCoreLayer.GetLayerDefinitionNewInput<Value>;
       //   ^?
 
       ensure(typeIsExactly<Expect, never>());
@@ -180,7 +182,7 @@ describe('type, OnionCore', (): void => {
 
     it('with layer, infers input, with any, fallback defined', (): void => {
       type Value = Layer<any, any, any, any>;
-      type Expect = OnionCore.GetLayerDefinitionNewInput<Value, 1>;
+      type Expect = OnionCoreLayer.GetLayerDefinitionNewInput<Value, 1>;
       //   ^?
 
       ensure(typeIsExactly<Expect, 1>());
@@ -189,7 +191,7 @@ describe('type, OnionCore', (): void => {
 
     it('with layer, infers input, with any, fallback defined', (): void => {
       type Value = Layer<any, any, TestBaseInput, any>;
-      type Expect = OnionCore.GetLayerDefinitionNewInput<Value>;
+      type Expect = OnionCoreLayer.GetLayerDefinitionNewInput<Value>;
       //   ^?
 
       ensure(typeIsExactly<Expect, TestBaseInput>());
@@ -200,7 +202,7 @@ describe('type, OnionCore', (): void => {
   describe('type, GetLayerDefinitionNewOutput', (): void => {
     it('with layer, infers input, with any, fallback never', (): void => {
       type Value = Layer<any, any, any, any>;
-      type Expect = OnionCore.GetLayerDefinitionNewOutput<Value>;
+      type Expect = OnionCoreLayer.GetLayerDefinitionNewOutput<Value>;
       //   ^?
 
       ensure(typeIsExactly<Expect, never>());
@@ -209,7 +211,7 @@ describe('type, OnionCore', (): void => {
 
     it('with layer, infers input, with any, fallback defined', (): void => {
       type Value = Layer<any, any, any, any>;
-      type Expect = OnionCore.GetLayerDefinitionNewOutput<Value, 1>;
+      type Expect = OnionCoreLayer.GetLayerDefinitionNewOutput<Value, 1>;
       //   ^?
 
       ensure(typeIsExactly<Expect, 1>());
@@ -218,7 +220,7 @@ describe('type, OnionCore', (): void => {
 
     it('with layer, infers input, with any, fallback defined', (): void => {
       type Value = Layer<any, any, any, TestBaseOutput>;
-      type Expect = OnionCore.GetLayerDefinitionNewOutput<Value>;
+      type Expect = OnionCoreLayer.GetLayerDefinitionNewOutput<Value>;
       //   ^?
 
       ensure(typeIsExactly<Expect, TestBaseOutput>());
@@ -228,122 +230,122 @@ describe('type, OnionCore', (): void => {
 
   describe('type, WithLayerExpectingCurrentInput', (): void => {
     it('with no layer, creates with current input', (): void => {
-      type Value = OnionCore.WithLayerDefinitionExpectingCurrentInput<{ id: string }>;
+      type Value = OnionCoreLayer.WithLayerDefinitionExpectingCurrentInput<{ id: string }>;
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentInput<Value>, { id: string }>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionCurrentInput<Value>, { id: string }>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentOutput<Value>, never>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionCurrentOutput<Value>, never>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewInput<Value>, never>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionNewInput<Value>, never>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewOutput<Value>, never>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionNewOutput<Value>, never>());
       //     ^?
     });
 
     it('with layer, replaces current input only', (): void => {
       type Fixture = Layer<{ name: string }, TestBaseOutput, { age: number }, TestBaseOutput>;
-      type Value = OnionCore.WithLayerDefinitionExpectingCurrentInput<{ id: string }, Fixture>;
+      type Value = OnionCoreLayer.WithLayerDefinitionExpectingCurrentInput<{ id: string }, Fixture>;
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentInput<Value>, { id: string }>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionCurrentInput<Value>, { id: string }>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentOutput<Value>, TestBaseOutput>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionCurrentOutput<Value>, TestBaseOutput>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewInput<Value>, { age: number }>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionNewInput<Value>, { age: number }>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewOutput<Value>, TestBaseOutput>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionNewOutput<Value>, TestBaseOutput>());
       //     ^?
     });
   });
 
   describe('type, WithLayerProvidingNewInput', (): void => {
     it('with no layer, creates with new input', (): void => {
-      type Value = OnionCore.WithLayerDefinitionProvidingNewInput<{ id: string }>;
+      type Value = OnionCoreLayer.WithLayerDefinitionProvidingNewInput<{ id: string }>;
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentInput<Value>, never>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionCurrentInput<Value>, never>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentOutput<Value>, never>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionCurrentOutput<Value>, never>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewInput<Value>, { id: string }>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionNewInput<Value>, { id: string }>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewOutput<Value>, never>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionNewOutput<Value>, never>());
       //     ^?
     });
 
     it('with layer, replaces new input only', (): void => {
       type Fixture = Layer<{ name: string }, TestBaseOutput, { age: number }, TestBaseOutput>;
-      type Value = OnionCore.WithLayerDefinitionProvidingNewInput<{ id: string }, Fixture>;
+      type Value = OnionCoreLayer.WithLayerDefinitionProvidingNewInput<{ id: string }, Fixture>;
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentInput<Value>, { name: string }>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionCurrentInput<Value>, { name: string }>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentOutput<Value>, TestBaseOutput>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionCurrentOutput<Value>, TestBaseOutput>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewInput<Value>, { id: string }>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionNewInput<Value>, { id: string }>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewOutput<Value>, TestBaseOutput>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionNewOutput<Value>, TestBaseOutput>());
       //     ^?
     });
   });
 
   describe('type, WithLayerProvidingNewOutput', (): void => {
     it('with no layer, creates with current output and new output', (): void => {
-      type Value = OnionCore.WithLayerDefinitionProvidingNewOutput<TestBaseOutput, NewOutputWithAuthentication>;
+      type Value = OnionCoreLayer.WithLayerDefinitionProvidingNewOutput<TestBaseOutput, NewOutputWithAuthentication>;
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentInput<Value>, never>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionCurrentInput<Value>, never>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentOutput<Value>, TestBaseOutput>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionCurrentOutput<Value>, TestBaseOutput>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewInput<Value>, never>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionNewInput<Value>, never>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewOutput<Value>, NewOutputWithAuthentication>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionNewOutput<Value>, NewOutputWithAuthentication>());
       //     ^?
     });
 
     it('with layer, replaces current output and new output only', (): void => {
       type Fixture = Layer<{ name: string }, TestBaseOutput, { age: number }, TestBaseOutput>;
-      type Value = OnionCore.WithLayerDefinitionProvidingNewOutput<TestBaseOutput, NewOutputWithAuthentication, Fixture>;
+      type Value = OnionCoreLayer.WithLayerDefinitionProvidingNewOutput<TestBaseOutput, NewOutputWithAuthentication, Fixture>;
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentInput<Value>, { name: string }>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionCurrentInput<Value>, { name: string }>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentOutput<Value>, TestBaseOutput>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionCurrentOutput<Value>, TestBaseOutput>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewInput<Value>, { age: number }>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionNewInput<Value>, { age: number }>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewOutput<Value>, NewOutputWithAuthentication>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionNewOutput<Value>, NewOutputWithAuthentication>());
       //     ^?
     });
 
     it('without layer, composable with multiple builders', (): void => {
-      type Previous = OnionCore.WithLayerDefinitionProvidingNewOutput<TestBaseOutput, NewOutputWithAuthentication>;
-      type Value = OnionCore.WithLayerDefinitionProvidingNewInput<{ age: number }, Previous>;
+      type Previous = OnionCoreLayer.WithLayerDefinitionProvidingNewOutput<TestBaseOutput, NewOutputWithAuthentication>;
+      type Value = OnionCoreLayer.WithLayerDefinitionProvidingNewInput<{ age: number }, Previous>;
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentInput<Value>, never>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionCurrentInput<Value>, never>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionCurrentOutput<Value>, TestBaseOutput>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionCurrentOutput<Value>, TestBaseOutput>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewInput<Value>, { age: number }>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionNewInput<Value>, { age: number }>());
       //     ^?
 
-      ensure(typeIsExactly<OnionCore.GetLayerDefinitionNewOutput<Value>, NewOutputWithAuthentication>());
+      ensure(typeIsExactly<OnionCoreLayer.GetLayerDefinitionNewOutput<Value>, NewOutputWithAuthentication>());
       //     ^?
     });
   });
