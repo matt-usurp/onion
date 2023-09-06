@@ -1,8 +1,9 @@
 import type { Grok } from '@matt-usurp/grok';
 import type { MockedFunction, MockedObject } from 'vitest';
 import type { OnionLayer as L } from './component/layer';
+import type { OnionTerminus } from './component/terminus';
 import type { OnionUtility as U } from './component/utility';
-import type { ComposerConstraint, Layer, LayerConstraint, Output, Terminus, TerminusConstraint } from './index';
+import type { ComposerConstraint, Layer, Output, Terminus } from './index';
 import { Composer, isOutputType, output } from './index';
 
 /* eslint-disable @typescript-eslint/ban-types */
@@ -18,23 +19,23 @@ export type TestBaseOutput = Output<'o:test:status', {
   readonly status: number;
 }>;
 
-const createTerminusClassMock = <GivenTerminus extends TerminusConstraint>(): MockedObject<Terminus.Class<GivenTerminus>> => {
+const createTerminusClassMock = <GivenTerminus extends OnionTerminus.TerminusDefinitionConstraint>(): MockedObject<Terminus.Class<GivenTerminus>> => {
   return {
     invoke: vi.fn(),
   } as unknown as MockedObject<Terminus.Class<GivenTerminus>>;
 };
 
-const createTerminusFunctionMock = <GivenTerminus extends TerminusConstraint>(): MockedFunction<Terminus.Fn<GivenTerminus>> => {
+const createTerminusFunctionMock = <GivenTerminus extends OnionTerminus.TerminusDefinitionConstraint>(): MockedFunction<Terminus.Fn<GivenTerminus>> => {
   return vi.fn() as MockedFunction<Terminus.Fn<GivenTerminus>>;
 };
 
-const createLayerClassMock = <GivenLayer extends LayerConstraint>(): MockedObject<Layer.Class<GivenLayer>> => {
+const createLayerClassMock = <GivenLayer extends L.LayerKind>(): MockedObject<Layer.Class<GivenLayer>> => {
   return {
     invoke: vi.fn(),
   } as MockedObject<Layer.Class<GivenLayer>>;
 };
 
-const createLayerFunctionMock = <GivenLayer extends LayerConstraint>(): MockedFunction<Layer.Fn<GivenLayer>> => {
+const createLayerFunctionMock = <GivenLayer extends L.LayerKind>(): MockedFunction<Layer.Fn<GivenLayer>> => {
   return vi.fn() as MockedFunction<Layer.Fn<GivenLayer>>;
 };
 

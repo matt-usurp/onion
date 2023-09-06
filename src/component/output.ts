@@ -20,7 +20,7 @@ export type OnionOutput<T extends string, V> = {
 
 export namespace OnionOutput {
   /**
-   * A constraint type that can be used to accept types of {@link OnionOutput}.
+   * A constraint type for {@link OnionOutput} that can be used with generic constraints.
    */
   export type OutputKind<T extends string = string> = OnionOutput<T, U.Anything>;
 }

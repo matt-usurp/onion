@@ -8,6 +8,22 @@ const InheritInput = Symbol();
 const InheritOutput = Symbol();
 
 /**
+ * Take the given {@link CurrentInput} and pass through to the next function whilst providing any {@link NewInput} if defined.
+ * With the given {@link NewOutput} and ensure its compatible or transformed into {@link CurrentOutput}.
+ */
+export type OnionLayer<
+  CurrentInput extends OnionInput.InputKind,
+  CurrentOutput extends OnionOutput.OutputKind,
+  NewInput extends OnionInput.InputKind,
+  NewOutput extends OnionOutput.OutputKind,
+> = {
+  readonly CurrentInput: CurrentInput;
+  readonly CurrentOutput: CurrentOutput;
+  readonly NewInput: NewInput;
+  readonly NewOutput: NewOutput;
+};
+
+/**
  * Onion internals namespace for the layer component.
  */
 export namespace OnionLayer {
@@ -27,20 +43,20 @@ export namespace OnionLayer {
     readonly [InheritMarker]: typeof InheritOutput;
   }>;
 
-  export type GetLayerDefinitionCurrentInput<GivenLayerDefinition extends LayerConstraint, Fallback = never> = U.Cleanse.Fallback<GivenLayerDefinition['CurrentInput'], Fallback>;
-  export type GetLayerDefinitionCurrentOutput<GivenLayerDefinition extends LayerConstraint, Fallback = never> = U.Cleanse.Fallback<GivenLayerDefinition['CurrentOutput'], Fallback>;
-  export type GetLayerDefinitionNewInput<GivenLayerDefinition extends LayerConstraint, Fallback = never> = U.Cleanse.Fallback<GivenLayerDefinition['NewInput'], Fallback>;
-  export type GetLayerDefinitionNewOutput<GivenLayerDefinition extends LayerConstraint, Fallback = never> = U.Cleanse.Fallback<GivenLayerDefinition['NewOutput'], Fallback>;
+  export type GetLayerDefinitionCurrentInput<GivenLayerDefinition extends LayerKind, Fallback = never> = U.Cleanse.Fallback<GivenLayerDefinition['CurrentInput'], Fallback>;
+  export type GetLayerDefinitionCurrentOutput<GivenLayerDefinition extends LayerKind, Fallback = never> = U.Cleanse.Fallback<GivenLayerDefinition['CurrentOutput'], Fallback>;
+  export type GetLayerDefinitionNewInput<GivenLayerDefinition extends LayerKind, Fallback = never> = U.Cleanse.Fallback<GivenLayerDefinition['NewInput'], Fallback>;
+  export type GetLayerDefinitionNewOutput<GivenLayerDefinition extends LayerKind, Fallback = never> = U.Cleanse.Fallback<GivenLayerDefinition['NewOutput'], Fallback>;
 
   export type ExtendingLayerDefinition<
-    GivenLayerDefinition extends LayerConstraint,
+    GivenLayerDefinition extends LayerKind,
     CurrentInput extends OnionInput.InputKind,
     CurrentOutput extends OnionOutput.OutputKind,
     NewInput extends OnionInput.InputKind,
     NewOutput extends OnionOutput.OutputKind,
   > = (
   /* eslint-disable @typescript-eslint/indent */
-    Layer<
+    OnionLayer<
       Grok.If.IsAny<CurrentInput, GetLayerDefinitionCurrentInput<GivenLayerDefinition, any>, CurrentInput>, // eslint-disable-line @typescript-eslint/no-explicit-any
       Grok.If.IsAny<CurrentOutput, GetLayerDefinitionCurrentOutput<GivenLayerDefinition, any>, CurrentOutput>, // eslint-disable-line @typescript-eslint/no-explicit-any
       Grok.If.IsAny<NewInput, GetLayerDefinitionNewInput<GivenLayerDefinition, any>, NewInput>, // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -51,21 +67,21 @@ export namespace OnionLayer {
 
   export type WithLayerDefinitionExpectingCurrentInput<
     CurrentInput extends OnionInput.InputKind,
-    GivenLayerDefinition extends LayerConstraint = LayerConstraint,
+    GivenLayerDefinition extends LayerKind = LayerKind,
   > = ExtendingLayerDefinition<GivenLayerDefinition, CurrentInput, any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
   export type WithLayerDefinitionProvidingNewInput<
     NewInput extends OnionInput.InputKind,
-    GivenLayerDefinition extends LayerConstraint = LayerConstraint,
+    GivenLayerDefinition extends LayerKind = LayerKind,
   > = ExtendingLayerDefinition<GivenLayerDefinition, any, any, NewInput, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
   export type WithLayerDefinitionProvidingNewOutput<
     CurrentOutput extends OnionOutput.OutputKind,
     NewOutput extends OnionOutput.OutputKind,
-    GivenLayerDefinition extends LayerConstraint = LayerConstraint,
+    GivenLayerDefinition extends LayerKind = LayerKind,
   > = ExtendingLayerDefinition<GivenLayerDefinition, any, CurrentOutput, any, NewOutput>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-  export type MakeLayerInput<GivenLayerDefinition extends LayerConstraint> = (
+  export type MakeLayerInput<GivenLayerDefinition extends LayerKind> = (
   /* eslint-disable @typescript-eslint/indent */
     U.Cleanse<
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -76,7 +92,7 @@ export namespace OnionLayer {
   /* eslint-enable @typescript-eslint/indent */
   );
 
-  export type MakeLayerOutput<GivenLayerDefinition extends LayerConstraint> = (
+  export type MakeLayerOutput<GivenLayerDefinition extends LayerKind> = (
   /* eslint-disable @typescript-eslint/indent */
     Promise<
       U.Cleanse<
@@ -89,7 +105,7 @@ export namespace OnionLayer {
   /* eslint-enable @typescript-eslint/indent */
   );
 
-  export type MakeLayerNext<GivenLayerDefinition extends LayerConstraint> = (
+  export type MakeLayerNext<GivenLayerDefinition extends LayerKind> = (
   /* eslint-disable @typescript-eslint/indent */
     U.Syntax.FunctionImplementation<
       U.Cleanse<
@@ -116,7 +132,7 @@ export namespace OnionLayer {
    * Take the given {@link CurrentInput} and pass through to the next function whilst providing any {@link NewInput} if defined.
    * With the given {@link NewOutput} and ensure its compatible or transformed into {@link CurrentOutput}.
    */
-  export type LayerClassImplementation<GivenLayerDefinition extends LayerConstraint> = (
+  export type LayerClassImplementation<GivenLayerDefinition extends LayerKind> = (
   /* eslint-disable @typescript-eslint/indent */
     U.Syntax.ClassImplementation<
       LayerFunctionImplementation<GivenLayerDefinition>
@@ -138,7 +154,7 @@ export namespace OnionLayer {
    * Take the given {@link CurrentInput} and pass through to the next function whilst providing any {@link NewInput} if defined.
    * With the given {@link NewOutput} and ensure its compatible or transformed into {@link CurrentOutput}.
    */
-  export type LayerFunctionImplementation<GivenLayerDefinition extends LayerConstraint> = (
+  export type LayerFunctionImplementation<GivenLayerDefinition extends LayerKind> = (
     input: MakeLayerInput<GivenLayerDefinition>,
     next: MakeLayerNext<GivenLayerDefinition>,
   ) => MakeLayerOutput<GivenLayerDefinition>;
@@ -151,7 +167,7 @@ export namespace OnionLayer {
   /* eslint-enable @typescript-eslint/indent */
   );
 
-  export type LayerImplementation<GivenLayerDefinition extends LayerConstraint> = (
+  export type LayerImplementation<GivenLayerDefinition extends LayerKind> = (
     | LayerClassImplementation<GivenLayerDefinition>
     | LayerFunctionImplementation<GivenLayerDefinition>
   );
@@ -159,46 +175,19 @@ export namespace OnionLayer {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export type LayerImplementationConstraint = LayerImplementation<any>;
 
-  /**
-   * Take the given {@link CurrentInput} and pass through to the next function whilst providing any {@link NewInput} if defined.
-   * With the given {@link NewOutput} and ensure its compatible or transformed into {@link CurrentOutput}.
-   */
-  export type Layer<
-    CurrentInput extends OnionInput.InputKind,
-    CurrentOutput extends OnionOutput.OutputKind,
-    NewInput extends OnionInput.InputKind,
-    NewOutput extends OnionOutput.OutputKind,
-  > = {
-    readonly CurrentInput: CurrentInput;
-    readonly CurrentOutput: CurrentOutput;
-    readonly NewInput: NewInput;
-    readonly NewOutput: NewOutput;
-  };
-
   // Syntax sugar:
-  export namespace Layer {
-    export import Class = OnionLayer.LayerClassImplementation;
-    export import Fn = OnionLayer.LayerFunctionImplementation;
+  export import Class = OnionLayer.LayerClassImplementation;
+  export import Fn = OnionLayer.LayerFunctionImplementation;
 
-    export import Input = OnionLayer.MakeLayerInput;
-    export import Output = OnionLayer.MakeLayerOutput;
-    export import Next = OnionLayer.MakeLayerNext;
+  export import Input = OnionLayer.MakeLayerInput;
+  export import Output = OnionLayer.MakeLayerOutput;
+  export import Next = OnionLayer.MakeLayerNext;
 
-    export namespace With {
-      export import ExpectingInput = OnionLayer.WithLayerDefinitionExpectingCurrentInput;
-      export import ProvidingInput = OnionLayer.WithLayerDefinitionProvidingNewInput;
-      export import ProvidingResponse = OnionLayer.WithLayerDefinitionProvidingNewOutput;
-    }
+  export namespace With {
+    export import ExpectingInput = OnionLayer.WithLayerDefinitionExpectingCurrentInput;
+    export import ProvidingInput = OnionLayer.WithLayerDefinitionProvidingNewInput;
+    export import ProvidingResponse = OnionLayer.WithLayerDefinitionProvidingNewOutput;
   }
 
-  export type LayerConstraint = (
-  /* eslint-disable @typescript-eslint/indent */
-    Layer<
-      any, // eslint-disable-line @typescript-eslint/no-explicit-any
-      any, // eslint-disable-line @typescript-eslint/no-explicit-any
-      any, // eslint-disable-line @typescript-eslint/no-explicit-any
-      any // eslint-disable-line @typescript-eslint/no-explicit-any
-    >
-  /* eslint-enable @typescript-eslint/indent */
-  );
+  export type LayerKind = OnionLayer<U.Anything, U.Anything, U.Anything, U.Anything>;
 }

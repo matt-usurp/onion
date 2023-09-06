@@ -1,6 +1,17 @@
-import type { OnionInput as I } from './input';
+import type { OnionInput } from './input';
 import type { OnionOutput } from './output';
 import type { OnionUtility as U } from './utility';
+
+/**
+ * Take the {@link GivenInput} and provide a return of {@link GivenOutput}.
+ */
+export type OnionTerminus<
+  CurrentInput extends OnionInput.InputKind,
+  CurrentOutput extends OnionOutput.OutputKind,
+> = {
+  readonly CurrentInput: CurrentInput;
+  readonly CurrentOutput: CurrentOutput;
+};
 
 /**
  * Onion internals namespace for the terminus component.
@@ -50,26 +61,13 @@ export namespace OnionTerminus {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export type TerminusImplementationConstraint = TerminusImplementation<any>;
 
-  /**
-   * Take the {@link GivenInput} and provide a return of {@link GivenOutput}.
-   */
-  export type TerminusDefinition<
-    CurrentInput extends I.InputKind,
-    CurrentOutput extends OnionOutput.OutputKind,
-  > = {
-    readonly CurrentInput: CurrentInput;
-    readonly CurrentOutput: CurrentOutput;
-  };
-
   // Syntax sugar:
-  export namespace TerminusDefinition {
-    export import Class = OnionTerminus.TerminusClassImplementation;
-    export import Fn = OnionTerminus.TerminusFunctionImplementation;
+  export import Class = OnionTerminus.TerminusClassImplementation;
+  export import Fn = OnionTerminus.TerminusFunctionImplementation;
 
-    export import Input = OnionTerminus.MakeTerminusInput;
-    export import Output = OnionTerminus.MakeTerminusOutput;
-  }
+  export import Input = OnionTerminus.MakeTerminusInput;
+  export import Output = OnionTerminus.MakeTerminusOutput;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  export type TerminusDefinitionConstraint = TerminusDefinition<any, any>;
+  export type TerminusDefinitionConstraint = OnionTerminus<any, any>;
 }
