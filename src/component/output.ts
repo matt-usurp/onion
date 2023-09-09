@@ -30,7 +30,9 @@ export namespace OnionOutput {
  */
 export const output = <T extends OnionOutput.OutputKind>(type: T['type'], value: T['value']): T => ({ type, value } as T);
 
-export const isOutputType = <T extends OnionOutput.OutputKind>(output: unknown, type: T['type']): output is T => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (output as any).type === type;
+export const isOutputType = <T extends OnionOutput.OutputKind>(
+  output: unknown,
+  type: T['type'],
+): output is T => {
+  return (output as Record<string, unknown>).type === type;
 };

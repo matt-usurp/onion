@@ -57,10 +57,10 @@ export namespace OnionLayer {
   > = (
   /* eslint-disable @typescript-eslint/indent */
     OnionLayer<
-      Grok.If.IsAny<CurrentInput, GetLayerDefinitionCurrentInput<GivenLayerDefinition, any>, CurrentInput>, // eslint-disable-line @typescript-eslint/no-explicit-any
-      Grok.If.IsAny<CurrentOutput, GetLayerDefinitionCurrentOutput<GivenLayerDefinition, any>, CurrentOutput>, // eslint-disable-line @typescript-eslint/no-explicit-any
-      Grok.If.IsAny<NewInput, GetLayerDefinitionNewInput<GivenLayerDefinition, any>, NewInput>, // eslint-disable-line @typescript-eslint/no-explicit-any
-      Grok.If.IsAny<NewOutput, GetLayerDefinitionNewOutput<GivenLayerDefinition, any>, NewOutput> // eslint-disable-line @typescript-eslint/no-explicit-any
+      Grok.If.IsAny<CurrentInput, GetLayerDefinitionCurrentInput<GivenLayerDefinition, U.Anything>, CurrentInput>,
+      Grok.If.IsAny<CurrentOutput, GetLayerDefinitionCurrentOutput<GivenLayerDefinition, U.Anything>, CurrentOutput>,
+      Grok.If.IsAny<NewInput, GetLayerDefinitionNewInput<GivenLayerDefinition, U.Anything>, NewInput>,
+      Grok.If.IsAny<NewOutput, GetLayerDefinitionNewOutput<GivenLayerDefinition, U.Anything>, NewOutput>
     >
   /* eslint-enable @typescript-eslint/indent */
   );
@@ -68,24 +68,23 @@ export namespace OnionLayer {
   export type WithLayerDefinitionExpectingCurrentInput<
     CurrentInput extends OnionInput.InputKind,
     GivenLayerDefinition extends LayerKind = LayerKind,
-  > = ExtendingLayerDefinition<GivenLayerDefinition, CurrentInput, any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  > = ExtendingLayerDefinition<GivenLayerDefinition, CurrentInput, U.Anything, U.Anything, U.Anything>;
 
   export type WithLayerDefinitionProvidingNewInput<
     NewInput extends OnionInput.InputKind,
     GivenLayerDefinition extends LayerKind = LayerKind,
-  > = ExtendingLayerDefinition<GivenLayerDefinition, any, any, NewInput, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  > = ExtendingLayerDefinition<GivenLayerDefinition, U.Anything, U.Anything, NewInput, U.Anything>;
 
   export type WithLayerDefinitionProvidingNewOutput<
     CurrentOutput extends OnionOutput.OutputKind,
     NewOutput extends OnionOutput.OutputKind,
     GivenLayerDefinition extends LayerKind = LayerKind,
-  > = ExtendingLayerDefinition<GivenLayerDefinition, any, CurrentOutput, any, NewOutput>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  > = ExtendingLayerDefinition<GivenLayerDefinition, U.Anything, CurrentOutput, U.Anything, NewOutput>;
 
   export type MakeLayerInput<GivenLayerDefinition extends LayerKind> = (
   /* eslint-disable @typescript-eslint/indent */
     U.Cleanse<
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      GetLayerDefinitionCurrentInput<GivenLayerDefinition, any>,
+      GetLayerDefinitionCurrentInput<GivenLayerDefinition, U.Anything>,
       LayerEnforceNextInputPassThrough,
       GetLayerDefinitionCurrentInput<GivenLayerDefinition> & LayerEnforceNextInputPassThrough
     >
@@ -96,8 +95,7 @@ export namespace OnionLayer {
   /* eslint-disable @typescript-eslint/indent */
     Promise<
       U.Cleanse<
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        GetLayerDefinitionCurrentOutput<GivenLayerDefinition, any>,
+        GetLayerDefinitionCurrentOutput<GivenLayerDefinition, U.Anything>,
         LayerEnforceNextOutputPassThrough,
         GetLayerDefinitionCurrentOutput<GivenLayerDefinition> | LayerEnforceNextOutputPassThrough
       >
@@ -109,15 +107,13 @@ export namespace OnionLayer {
   /* eslint-disable @typescript-eslint/indent */
     U.Syntax.FunctionImplementation<
       U.Cleanse<
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        GetLayerDefinitionNewInput<GivenLayerDefinition, any>,
+        GetLayerDefinitionNewInput<GivenLayerDefinition, U.Anything>,
         LayerEnforceNextInputPassThrough,
         GetLayerDefinitionNewInput<GivenLayerDefinition> & LayerEnforceNextInputPassThrough
       >,
       Promise<
         U.Cleanse<
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          GetLayerDefinitionNewOutput<GivenLayerDefinition, any>,
+          GetLayerDefinitionNewOutput<GivenLayerDefinition, U.Anything>,
           LayerEnforceNextOutputPassThrough,
           GetLayerDefinitionNewOutput<GivenLayerDefinition> | LayerEnforceNextOutputPassThrough
         >
@@ -132,21 +128,8 @@ export namespace OnionLayer {
    * Take the given {@link CurrentInput} and pass through to the next function whilst providing any {@link NewInput} if defined.
    * With the given {@link NewOutput} and ensure its compatible or transformed into {@link CurrentOutput}.
    */
-  export type LayerClassImplementation<GivenLayerDefinition extends LayerKind> = (
-  /* eslint-disable @typescript-eslint/indent */
-    U.Syntax.ClassImplementation<
-      LayerFunctionImplementation<GivenLayerDefinition>
-    >
-  /* eslint-enable @typescript-eslint/indent */
-  );
-
-  export type LayerClassImplementationConstraint = (
-  /* eslint-disable @typescript-eslint/indent */
-    LayerClassImplementation<
-      any // eslint-disable-line @typescript-eslint/no-explicit-any
-    >
-  /* eslint-enable @typescript-eslint/indent */
-  );
+  export type LayerClassImplementation<GivenLayerDefinition extends LayerKind> = U.Syntax.ClassImplementation<LayerFunctionImplementation<GivenLayerDefinition>>;
+  export type LayerClassImplementationConstraint = LayerClassImplementation<U.Anything>;
 
   /**
    * A layer implementation using the functional style syntax.
@@ -159,21 +142,14 @@ export namespace OnionLayer {
     next: MakeLayerNext<GivenLayerDefinition>,
   ) => MakeLayerOutput<GivenLayerDefinition>;
 
-  export type LayerFunctionImplementationConstraint = (
-  /* eslint-disable @typescript-eslint/indent */
-    LayerFunctionImplementation<
-      any // eslint-disable-line @typescript-eslint/no-explicit-any
-    >
-  /* eslint-enable @typescript-eslint/indent */
-  );
+  export type LayerFunctionImplementationConstraint = LayerFunctionImplementation<U.Anything>;
 
   export type LayerImplementation<GivenLayerDefinition extends LayerKind> = (
     | LayerClassImplementation<GivenLayerDefinition>
     | LayerFunctionImplementation<GivenLayerDefinition>
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  export type LayerImplementationConstraint = LayerImplementation<any>;
+  export type LayerImplementationConstraint = LayerImplementation<U.Anything>;
 
   // Syntax sugar:
   export import Class = OnionLayer.LayerClassImplementation;

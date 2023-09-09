@@ -1,6 +1,6 @@
 import type { Grok } from '@matt-usurp/grok';
 import type { OnionComposition } from './component/composition';
-import { createOnionCompositionGlobalInvoke } from './component/composition';
+import { createOnionCompositionUniversalInvoke } from './component/composition';
 import type { OnionInput } from './component/input';
 import type { OnionLayer } from './component/layer';
 import type { OnionOutput } from './component/output';
@@ -87,7 +87,7 @@ export class Composer<
     GivenInput extends CurrentInput,
     GivenOutput extends CurrentOutput,
   >(terminus: OnionTerminus.TerminusImplementation<GivenTerminusDefinition>): OnionComposition<InitialInput, InitialOutput> {
-    const terminusInvokable = createOnionCompositionGlobalInvoke(terminus);
+    const terminusInvokable = createOnionCompositionUniversalInvoke(terminus);
 
     const build: OnionComposition.CompositionBuilderFunction<InitialInput, InitialOutput> = (instrument) => {
       if (this.layers.length === 0) {
@@ -100,12 +100,12 @@ export class Composer<
 
       if (instrument === undefined) {
         return this.layers.reduceRight<U.Syntax.FunctionImplementationKind>((next, layer) => {
-          return async (input) => createOnionCompositionGlobalInvoke(layer)(input, next);
+          return async (input) => createOnionCompositionUniversalInvoke(layer)(input, next);
         }, terminusInvokable);
       }
 
       return this.layers.reduceRight<U.Syntax.FunctionImplementationKind>((next, layer) => {
-        return instrument(layer, async (input) => createOnionCompositionGlobalInvoke(layer)(input, next));
+        return instrument(layer, async (input) => createOnionCompositionUniversalInvoke(layer)(input, next));
       }, terminusInvokable);
     };
 

@@ -6,28 +6,23 @@ import type { OnionUtility as U } from './utility';
 
 /**
  * The composition that was created using the builder.
- *
- * Provided are:
- * - All the {@link OnionLayer.LayerImplementationConstraint Layers} that were used.
- * - A `build()` function that will create an invokable chain with an optional instrumentation function.
- * - A `invoke()` function that is prebuilt.
  */
 export type OnionComposition<
   GivenInput extends OnionInput.InputKind,
   GivenOutput extends OnionOutput.OutputKind,
 > = {
   /**
-   * All layers.
+   * All the {@link OnionLayer.LayerImplementationConstraint Layers} that were used.
    */
   readonly layers: OnionLayer.LayerImplementationConstraint[];
 
   /**
-   * A builder for the composition.
+   * A `build()` function that will create an invokable chain with an optional instrumentation function.
    */
   readonly build: OnionComposition.CompositionBuilderFunction<GivenInput, GivenOutput>;
 
   /**
-   * A pre-built composition.
+   * A `invoke()` function that is prebuilt.
    */
   readonly invoke: U.Syntax.FunctionImplementation<GivenInput, Promise<GivenOutput>>;
 };
@@ -60,7 +55,7 @@ export namespace OnionComposition {
   ) => U.Syntax.FunctionImplementation<GivenInput, Promise<GivenOutput>>;
 }
 
-export const createOnionCompositionGlobalInvoke = (value: U.Anything): ((...args: U.Anything[]) => Promise<U.Anything>) => {
+export const createOnionCompositionUniversalInvoke = (value: U.Anything): ((...args: U.Anything[]) => Promise<U.Anything>) => {
   if ((value as Record<'invoke', U.Anything>).invoke !== undefined) {
     return (value as Record<'invoke', U.Anything>).invoke as ((...args: U.Anything[]) => Promise<U.Anything>);
   }

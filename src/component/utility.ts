@@ -4,8 +4,7 @@ import type { Grok } from '@matt-usurp/grok';
  * Onion internals namespace for the utilities.
  */
 export namespace OnionUtility {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  export type Anything = any;
+  export type Anything = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
   export namespace Syntax {
     /**
