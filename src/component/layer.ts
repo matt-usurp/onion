@@ -3,9 +3,9 @@ import type { OnionInput } from './input';
 import type { OnionOutput } from './output';
 import type { OnionUtility as U } from './utility';
 
-const InheritMarker = Symbol();
-const InheritInput = Symbol();
-const InheritOutput = Symbol();
+declare const InheritMarker: unique symbol;
+declare const InheritInput: unique symbol;
+declare const InheritOutput: unique symbol;
 
 /**
  * Take the given {@link CurrentInput} and pass through to the next function whilst providing any {@link NewInput} if defined.
@@ -26,7 +26,7 @@ export type OnionLayer<
 /**
  * Onion internals namespace for the layer component.
  */
-export namespace OnionLayer {
+export declare namespace OnionLayer {
   /**
    * This requires that the given input to the {@link Layer} be passed through to the next function via spread.
    * The purpose of this is to ensure properties that you are not aware are passed down through the stack.
