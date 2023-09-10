@@ -1,8 +1,8 @@
 {
-  "version": "0.0.0-dev",
+  "version": "0.1.0",
   "type": "commonjs",
   "name": "@matt-usurp/onion",
-  "description": "A type-first function composer with onion middleware",
+  "description": "A type-first function composer with an onion middleware strategy",
   "engines": {
     "node": ">=16.16.0",
     "npm": ">=8.15.0"

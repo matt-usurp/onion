@@ -122,10 +122,21 @@ build.compile.clean:
 
 build.package:
 	cp package.json ${DIR_WORKSPACE}/package.json
-	cp package-lock.json ${DIR_WORKSPACE}/package-lock.json
 	cp README.md ${DIR_WORKSPACE}/README.md
 
 build.package.verify:
 	test -f ${DIR_WORKSPACE}/package.json
-	test -f ${DIR_WORKSPACE}/package-lock.json
 	test -f ${DIR_WORKSPACE}/README.md
+
+# --
+# -- Publish
+# --
+
+publish:
+	pnpm publish --ignore-scripts --dry-run ./${DIR_WORKSPACE}
+
+publish.latest:
+	pnpm publish --ignore-scripts --access public ./${DIR_WORKSPACE}
+
+publish.next:
+	pnpm publish --ignore-scripts --access public --tag next ./${DIR_WORKSPACE}
